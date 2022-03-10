@@ -15,8 +15,14 @@ namespace Stipple {
         return Math.min(max, Math.max(min, value));
     }
 
-    function randomTile(palette: ColorPalette): Tile {
-        const randIndex = () => randomRangeInt(0, palette.colorCount());
+    function randomTile(palette: ColorPalette, blacklist: number[] = []): Tile {
+        const randIndex = () => {
+            let x: number;
+            do {
+                x = randomRangeInt(0, palette.colorCount());
+            } while (blacklist.indexOf(x) >= 0);
+            return x;
+        };
         const tile = new Tile(palette);
         const a = randIndex();
         let b: number;
@@ -33,7 +39,8 @@ namespace Stipple {
 
     function generateRandomTiles(palette: ColorPalette): Grid2d<Tile> {
         return Grid2d.build(Coord2d.origin, defaultTileExtent, () => {
-            return randomTile(palette);
+            const blacklist: number[] = [1];
+            return randomTile(palette, blacklist);
         });
     }
 
@@ -54,7 +61,7 @@ namespace Stipple {
     let _cachedShape: Grid2d<A | B> | null = null;
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
-            _cachedShape = generateTriangle(8 * 5, B);
+            _cachedShape = generateCircle(8 * 10, B);
         }
         return _cachedShape;
     }
@@ -126,7 +133,7 @@ namespace Stipple {
             });
         }
 
-        public render() {
+        public render(): void {
             this._drawCanvas.renderTileGrid(Coord2d.origin, this._tiles);
             this._ditheredCanvas.renderTileGrid(Coord2d.origin, downscale(this._tiles));
             this._paletteCanvas.render();
@@ -135,7 +142,7 @@ namespace Stipple {
             this._paletteCanvas.commitRender();
         }
 
-        public doSomething() {
+        public doSomething(): void {
             let defaultLogicalPixelOffset = new Coord2d(2 * Tile.extent.x, 3 * Tile.extent.y);
             let logicalPixelOffset = defaultLogicalPixelOffset;
 
@@ -177,7 +184,7 @@ namespace Stipple {
 
     let _app: App | null = null;
 
-    export function main() {
+    export function main(): void {
         if (_app) {
             throw Error();
         }
