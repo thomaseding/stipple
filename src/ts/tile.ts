@@ -3,8 +3,7 @@
 class Tile {
     protected readonly __brand_Tile: undefined;
 
-    public static readonly dim: number = TilePattern.dim;
-    public static readonly extent: Coord2d = new Coord2d(Tile.dim, Tile.dim);
+    public static readonly extent: Coord2d = TilePattern.extent;
     public static readonly localCoords: Coord2d[] = TilePattern.coords;
 
     public constructor(palette: ColorPalette, pattern?: TilePattern);
@@ -38,12 +37,10 @@ class Tile {
     public toPixelGrid(): Grid2d<Pixel> {
         const position = Coord2d.origin;
         const extent = Tile.extent;
-        const grid = new Grid2d(position, extent, (coord: Coord2d) => {
+        return Grid2d.build(position, extent, (coord: Coord2d) => {
             const color = this._colorAt(coord);
-            const pixel = new Pixel(color);
-            return pixel;
+            return new Pixel(color);
         });
-        return grid;
     }
 
     public pattern(): TilePattern {

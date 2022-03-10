@@ -119,7 +119,7 @@ namespace Dither.Bayer {
             const converted = lane.split("").map(_convert);
             gridArray.push(converted);
         }
-        const grid = new Grid2d(Coord2d.origin, gridArray);
+        const grid = Grid2d.from2d(Coord2d.origin, gridArray);
         return new TilePattern(grid);
     }
 

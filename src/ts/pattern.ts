@@ -3,7 +3,7 @@
 class TilePattern {
     protected readonly __brand_Pattern: undefined;
 
-    public static readonly dim: number = 8;
+    private static readonly dim: number = 8;
     public static readonly extent: Coord2d = Coord2d.square(this.dim);
     public static readonly coords: Coord2d[] = this._generateCoords(this.extent);
 
@@ -37,9 +37,12 @@ class TilePattern {
 
     private static _generateCoords(extent: Coord2d): Coord2d[] {
         const coords: Coord2d[] = [];
-        new Grid2d(Coord2d.origin, extent, (coord: Coord2d) => {
-            coords.push(coord);
-        });
+        for (let x = 0; x < extent.x; ++x) {
+            for (let y = 0; y < extent.y; ++y) {
+                const coord = new Coord2d(x, y);
+                coords.push(coord);
+            }
+        }
         return coords;
     }
 

@@ -64,6 +64,14 @@ class Coord2d implements Object2d<Coord2d> {
         return other.divide(this).isInteger();
     }
 
+    public magnitudeSquared(): number {
+        return this.x * this.x + this.y * this.y;
+    }
+
+    public magnitude(): number {
+        return Math.sqrt(this.magnitudeSquared());
+    }
+
     public readonly x: number;
     public readonly y: number;
 }
@@ -85,58 +93,70 @@ namespace Object2d {
 class Grid2d<T> implements Object2d<Grid2d<T>> {
     protected readonly __brand_Grid2d: undefined;
 
-    public constructor(position: Coord2d, grid: T[][]);
-    public constructor(position: Coord2d, extent: Coord2d, initialValue: (position: Coord2d) => T);
-    public constructor(position: Coord2d, arg1: T[][] | Coord2d, initialValue?: (position: Coord2d) => T) {
+    private constructor(position: Coord2d, extent: Coord2d, linearGrid: T[]);
+    private constructor(position: Coord2d, extent: Coord2d, initialValue: (position: Coord2d) => T);
+    private constructor(position: Coord2d, extent: Coord2d, arg2: T[] | ((position: Coord2d) => T)) {
         this._position = position;
-        if (arg1 instanceof Coord2d) {
-            const extent = arg1;
-            initialValue = initialValue!;
-            this._grid = [];
-            this._extent = extent!;
-            for (let y = 0; y < this._extent.y; ++y) {
-                const lane: T[] = [];
-                for (let x = 0; x < this._extent.x; ++x) {
-                    const coord = new Coord2d(position.x + x, position.y + y);
-                    lane.push(initialValue(coord));
-                }
-                this._grid.push(lane);
-            }
+        this._extent = extent!;
+        if (Array.isArray(arg2)) {
+            const linearGrid = arg2;
+            this._linearGrid = linearGrid;
         }
         else {
-            const grid = arg1;
-            this._grid = grid.map(lane => lane.slice());
-            const height = this._grid.length;
-            const width = this._grid[0]?.length || 0;
-            const consistent = this._grid.every((lane: T[]) => {
-                return lane.length === width;
-            });
-            if (!consistent) {
-                throw Error();
+            const initialValue = arg2;
+            this._linearGrid = [];
+            for (let y = 0; y < this._extent.y; ++y) {
+                for (let x = 0; x < this._extent.x; ++x) {
+                    const coord = new Coord2d(position.x + x, position.y + y);
+                    this._linearGrid.push(initialValue(coord));
+                }
             }
-            this._extent = new Coord2d(width, height);
         }
+    }
+
+    public static build<T>(position: Coord2d, extent: Coord2d, initialValue: (position: Coord2d) => T): Grid2d<T> {
+        return new Grid2d(position, extent, initialValue);
+    }
+
+    public static fill<T>(position: Coord2d, extent: Coord2d, initialValue: T): Grid2d<T> {
+        const linearGrid = Array(extent.x * extent.y).fill(initialValue);
+        return new Grid2d(position, extent, linearGrid);
+    }
+
+    public static from1d<T>(position: Coord2d, extent: Coord2d, linearGrid: T[]): Grid2d<T> {
+        return new Grid2d(position, extent, linearGrid.slice());
+    }
+
+    public static from2d<T>(position: Coord2d, grid: T[][]): Grid2d<T> {
+        const linearGrid: T[] = [];
+        const height = grid.length;
+        const width = grid[0]?.length || 0;
+        const consistent = grid.every((lane: T[]) => {
+            return lane.length === width;
+        });
+        if (!consistent) {
+            throw Error();
+        }
+        grid.forEach((xs) => {
+            xs.forEach((x) => {
+                linearGrid.push(x);
+            });
+        });
+        const extent = new Coord2d(width, height);
+        return new Grid2d(position, extent, linearGrid);
     }
 
     public getObjectCoord(): Coord2d {
         return this._position;
     }
 
-    public setObjectCoord(newGridPosition: Coord2d): Grid2d<T> {
-        const delta = newGridPosition.subtract(this._position);
-        const grid = new Grid2d(newGridPosition, this._extent, (newValuePosition: Coord2d) => {
-            const value = this.getAt(newValuePosition.subtract(delta));
-            return value;
-        });
-        return grid;
+    public setObjectCoord(position: Coord2d): Grid2d<T> {
+        return Grid2d.from1d(position, this._extent, this._linearGrid);
     }
 
     public indexedGet(index: Coord2d): T {
-        const lane = this._grid[index.y];
-        if (lane === undefined) {
-            throw Error();
-        }
-        const value = lane[index.x];
+        const linear = this._linearize(index);
+        const value = this._linearGrid[linear];
         if (value === undefined) {
             throw Error();
         }
@@ -149,14 +169,11 @@ class Grid2d<T> implements Object2d<Grid2d<T>> {
     }
 
     public indexedSet(index: Coord2d, value: T): void {
-        const lane = this._grid[index.y];
-        if (lane === undefined) {
+        const linear = this._linearize(index);
+        if (this._linearGrid.length <= linear) {
             throw Error();
         }
-        if (lane.length <= index.x) {
-            throw Error();
-        }
-        lane[index.x] = value;
+        this._linearGrid[linear] = value;
     }
 
     public setAt(position: Coord2d, value: T): void {
@@ -186,7 +203,11 @@ class Grid2d<T> implements Object2d<Grid2d<T>> {
         return this._extent.x * this._extent.y;
     }
 
-    private readonly _grid: T[][];
+    private _linearize(index: Coord2d): number {
+        return index.y * this._extent.x + index.x;
+    }
+
+    private readonly _linearGrid: T[];
     private readonly _position: Coord2d;
     private readonly _extent: Coord2d;
 }

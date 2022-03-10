@@ -17,21 +17,22 @@ class Canvas {
             throw Error();
         }
         this._context = context;
+        this._imageData = this._context.createImageData(this._canvas.width, this._canvas.height);
         this._redraw = info.redraw;
         this._pixelScale = info.pixelScale;
     }
 
-    public renderTileGrid(coord: Coord2d, tiles: Grid2d<Tile>): void {
-        tiles.forEach((coord2: Coord2d, tile: Tile) => {
-            const coord3 = coord.add(coord2.scale(Tile.extent));
-            this.renderTile(coord3, tile);
+    public renderTileGrid(pixelOffset: Coord2d, grid: Grid2d<Tile>): void {
+        grid.forEach((tileOffset: Coord2d, tile: Tile) => {
+            const tilePos = grid.position().add(tileOffset).scale(Tile.extent).add(pixelOffset);
+            this.renderTile(tilePos, tile);
         });
+        this.strokeRect(pixelOffset, grid.extent().scale(this._pixelScale), Color.gray);
     }
 
-    public renderTile(coord: Coord2d, tile: Tile): void {
+    public renderTile(pixelOffset: Coord2d, tile: Tile): void {
         const grid = tile.toPixelGrid();
-        this.renderPixelGrid(coord, grid);
-        //this.strokeRect(coord.scale(this._pixelScale), grid.extent().scale(this._pixelScale), Color.gray);
+        this.renderPixelGrid(pixelOffset, grid);
     }
 
     public renderPixelGrid(coord: Coord2d, pixels: Grid2d<Pixel>): void {
@@ -41,43 +42,64 @@ class Canvas {
         });
     }
 
-    public renderPixel(coord: Coord2d, pixel: Pixel): void {
-        const coord2 = coord.scale(this._pixelScale);
-        const extent = new Coord2d(this._pixelScale, this._pixelScale);
-        this.fillRect(coord2, extent, pixel.color);
+    public renderPixel(pixelOffset: Coord2d, pixel: Pixel): void {
+        this.fillLogicalPixel(pixelOffset.x, pixelOffset.y, pixel.color.toRgb());
     }
 
     public fillRect(coord: Coord2d, extent: Coord2d, color: Color): void {
         const rgb = color.toRgb();
-        this._context.fillStyle = rgb.toString();
-        this._renderRect(coord, extent, true);
+        for (let w = 0; w < extent.x; ++w) {
+            for (let h = 0; h < extent.y; ++h) {
+                const x = coord.x + w;
+                const y = coord.y + h;
+                this.fillPhysicalPixel(x, y, rgb);
+            }
+        }
     }
 
     public strokeRect(coord: Coord2d, extent: Coord2d, color: Color): void {
         const rgb = color.toRgb();
-        this._context.strokeStyle = rgb.toString();
-        this._renderRect(coord, extent, false);
+        for (let w = 0; w < extent.x; ++w) {
+            for (let h = 0; h < extent.y; ++h) {
+                const x = coord.x + w;
+                const y = coord.y + h;
+                const border = w === 0 || h === 0 || w === extent.x - 1 || h === extent.y - 1;
+                if (border) {
+                    this.fillPhysicalPixel(x, y, rgb);
+                }
+            }
+        }
     }
 
-    private _renderRect(coord: Coord2d, extent: Coord2d, fill: boolean): void {
-        const x = coord.x;
-        const y = coord.y;
-        const w = extent.x;
-        const h = extent.y;
-        if (fill) {
-            this._context.fillRect(x, y, w, h);
+    public fillLogicalPixel(x: number, y: number, rgb: RgbColor): void {
+        x *= this._pixelScale;
+        y *= this._pixelScale;
+        for (let dx = 0; dx < this._pixelScale; ++dx) {
+            for (let dy = 0; dy < this._pixelScale; ++dy) {
+                this.fillPhysicalPixel(x + dx, y + dy, rgb);
+            }
         }
-        else {
-            this._context.strokeRect(x, y, w, h);
-        }
+    }
+
+    public fillPhysicalPixel(x: number, y: number, rgb: RgbColor): void {
+        const i = 4 * (y * this._imageData.width + x);
+        this._imageData.data[i + 0] = rgb.red;
+        this._imageData.data[i + 1] = rgb.green;
+        this._imageData.data[i + 2] = rgb.blue;
+        this._imageData.data[i + 3] = 0xFF;
     }
 
     public canvas(): HTMLCanvasElement {
         return this._canvas;
     }
 
+    public commitRender(): void {
+        this._context.putImageData(this._imageData, 0, 0);
+    }
+
     protected readonly _canvas: HTMLCanvasElement;
     protected readonly _context: CanvasRenderingContext2D;
+    protected readonly _imageData: ImageData;
     protected readonly _redraw: () => void;
     protected readonly _pixelScale: number;
 }
