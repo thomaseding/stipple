@@ -53,7 +53,7 @@ function prepareForTiling<T>(grid: Grid2d<T>, defaultValue: T): Grid2d<T> {
     const fatGrid = new Grid2d(positionDown, fatExtent, (_coord: Coord2d) => {
         return defaultValue;
     });
-    mergeIntoGrid(fatGrid, grid);
+    mergeIntoGrid(fatGrid, grid, () => true);
     return fatGrid;
 }
 
@@ -73,10 +73,11 @@ function convertToTileGrid(palette: ColorPalette, abGrid: Grid2d<A | B>): Grid2d
 
 function downscale(grid: Grid2d<Tile>): Grid2d<Tile> {
     return new Grid2d(grid.position(), grid.extent(), (position: Coord2d) => {
-        const tile = grid.getAt(position);
+        const tile = grid.getAt(position).clone();
         const fullResolution = tile.pattern();
         const ratio = fullResolution.countOf(B) / (Tile.extent.x * Tile.extent.y);
         const lowResolution = Dither.Bayer.patternFromRatio(ratio);
-        return new Tile(tile.palette(), lowResolution);
+        tile.setPattern(lowResolution);
+        return tile;
     });
 }

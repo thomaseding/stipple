@@ -205,10 +205,10 @@ function gridContainsGrid<T>(self: Grid2d<T>, other: Grid2d<T>): boolean {
         && gridContainsCoord(self, other.position().add(other.extent()).subtract(Coord2d.unit));
 }
 
-function mergeIntoGrid<T>(self: Grid2d<T>, other: Grid2d<T>): void {
+function mergeIntoGrid<T>(self: Grid2d<T>, other: Grid2d<T>, predicate: (value: T) => boolean): void {
     other.forEach((offset: Coord2d, value: T) => {
         const pos = other.position().add(offset);
-        if (gridContainsCoord(self, pos)) {
+        if (gridContainsCoord(self, pos) && predicate(value)) {
             self.setAt(pos, value);
         }
     });

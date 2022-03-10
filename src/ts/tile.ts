@@ -58,6 +58,10 @@ class Tile {
         return this._palette;
     }
 
+    public clone(): Tile {
+        return new Tile(this._palette, this._pattern, this._indexA, this._indexB);
+    }
+
     private _colorAt(localCoord: Coord2d): Color {
         const ab = this._pattern.at(localCoord);
         const index = ab === A ? this._indexA : this._indexB;

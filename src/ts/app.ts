@@ -38,6 +38,14 @@ namespace Stipple {
         });
     }
 
+    let _generateRandomTilesCache: Grid2d<Tile> | null = null;
+    function generateRandomTilesCached(palette: ColorPalette): Grid2d<Tile> {
+        if (!_generateRandomTilesCache) {
+            _generateRandomTilesCache = generateRandomTiles(palette);
+        }
+        return _generateRandomTilesCache.setObjectCoord(Coord2d.origin);
+    }
+
     function generateBlackTiles(palette: ColorPalette): Grid2d<Tile> {
         return new Grid2d(Coord2d.origin, defaultTileExtent, () => {
             return new Tile(palette);
@@ -45,11 +53,11 @@ namespace Stipple {
     }
 
     function generateTiles(palette: ColorPalette, shapeOffset = Coord2d.origin): Grid2d<Tile> {
-        const allTiles = generateBlackTiles(palette);
+        const allTiles = generateRandomTilesCached(palette);
         let shape = generateTriangle(80, B);
         shape = shape.setObjectCoord(shapeOffset);
         const shapeTiles = convertToTileGrid(palette, shape);
-        mergeIntoGrid(allTiles, shapeTiles);
+        mergeIntoGrid(allTiles, shapeTiles, (tile) => tile.pattern().countOf(B) > 0);
         return allTiles;
     }
 
