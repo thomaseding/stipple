@@ -8,8 +8,12 @@ class CoordImpl<Derived extends CoordImpl<Derived>> {
         return this.x === other.x && this.y === other.y;
     }
 
-    public map(func: (v: number) => number): Derived {
+    public map(func: (u: number) => number): Derived {
         return new CoordImpl(func(this.x), func(this.y)) as Derived;
+    }
+
+    public zipWith(other: Derived, func: (u: number, v: number) => number): Derived {
+        return new CoordImpl(func(this.x, other.x), func(this.y, other.y)) as Derived;
     }
 
     public min(other: Derived): Derived {
@@ -80,6 +84,10 @@ class Vector2d extends CoordImpl<Vector2d> {
         return new Vector2d(k * this.x, k * this.y);
     }
 
+    public negate(): Vector2d {
+        return new Vector2d(-1 * this.x, -1 * this.y);
+    }
+
     public multiply(other: Vector2d): Vector2d {
         return new Vector2d(other.x * this.x, other.y * this.y);
     }
@@ -110,6 +118,10 @@ class Vector2d extends CoordImpl<Vector2d> {
     public magnitude(): number {
         return Math.sqrt(this.magnitudeSquared());
     }
+
+    public area(): number {
+        return this.x * this.y;
+    }
 }
 
 class Box2d {
@@ -139,7 +151,7 @@ class Box2d {
     }
 
     public area(): number {
-        return this._extent.x * this._extent.y;
+        return this._extent.area();
     }
 
     public containsPoint(point: Point2d): boolean {

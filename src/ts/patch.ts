@@ -15,11 +15,13 @@ class Patch implements SceneObject {
         this._colorB = colorB;
     }
 
+    public static readonly black: Patch = new Patch(Color.black, Color.black);
+
     public pattern(): PatchPattern {
         return this._pattern;
     }
 
-    public newTile(pattern: PatchPattern): Patch {
+    public updatePattern(pattern: PatchPattern): Patch {
         return new Patch(this._colorA, this._colorB, pattern);
     }
 
