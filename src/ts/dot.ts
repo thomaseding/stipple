@@ -5,13 +5,13 @@ class Dot implements SceneObject {
         this.color = color;
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d, zIndex: number): void {
+    public renderTo(context: RenderContext, transform: Transform2d): void {
         const rgb = this.color.toRgb();
         const t = transform.translation();
         const s = transform.scale();
         for (let x = 0; x < s.x; ++x) {
             for (let y = 0; y < s.y; ++y) {
-                context.renderPixel(x + t.x, y + t.y, zIndex, rgb);
+                context.renderPixel(x + t.x, y + t.y, rgb);
             }
         }
     }

@@ -32,12 +32,12 @@ class Patch implements SceneObject {
         return color;
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d, zIndex: number): void {
+    public renderTo(context: RenderContext, transform: Transform2d): void {
         for (const localOffset of Patch.localOffsets) {
             const color = this.colorAt(localOffset);
             const dot = new Dot(color);
             const dotTransform = Transform2d.translateBy(localOffset).then(transform);
-            dot.renderTo(context, dotTransform, zIndex);
+            dot.renderTo(context, dotTransform);
         }
     }
 
@@ -51,14 +51,14 @@ class Quilt implements SceneObject {
         this._grid = grid;
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d, zIndex: number): void {
+    public renderTo(context: RenderContext, transform: Transform2d): void {
         const extent = this._grid.extent();
         for (let x = 0; x < extent.x; ++x) {
             for (let y = 0; y < extent.y; ++y) {
                 const localOffset = new Vector2d(x, y);
                 const patch = this._grid.getAt(localOffset);
                 const patchTransform = Transform2d.translateBy(localOffset).then(transform);
-                patch.renderTo(context, patchTransform, zIndex);
+                patch.renderTo(context, patchTransform);
             }
         }
     }

@@ -80,6 +80,7 @@ namespace Stipple {
         const bg = generateBackgroundQuiltCached(palette);
         const node = new SceneNode<Quilt>();
         node.objects.push(bg);
+        node.setLocalTransform(Transform2d.scaleBy(Vector2d.square(drawScale)));
         return node;
     }
 
@@ -94,7 +95,7 @@ namespace Stipple {
         const shape = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
-        node.setLocalTransform(Transform2d.translateBy(shapePixelOffset));
+        node.setLocalTransform(Transform2d.scaleBy(Vector2d.square(drawScale)).then(Transform2d.translateBy(shapePixelOffset)));
         return node;
     }
 
