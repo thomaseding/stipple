@@ -32,16 +32,8 @@ interface Renderable {
 interface SceneObject extends Renderable {
 }
 
-class SceneNode implements Renderable {
+class SceneNode<T extends SceneObject> implements Renderable {
     public constructor() { }
-
-    public addChildNode(child: SceneNode): void {
-        this._childNodes.push(child);
-    }
-
-    public addObject(o: SceneObject): void {
-        this._objects.push(o);
-    }
 
     public setLocalTransform(t: Transform2d): void {
         this._localTransform = t;
@@ -49,26 +41,26 @@ class SceneNode implements Renderable {
 
     public renderTo(context: RenderContext, transform: Transform2d, _zIndex: number): void {
         const t = transform.then(this._localTransform);
-        for (const o of this._objects) {
+        for (const o of this.objects) {
             o.renderTo(context, t, this._zIndex);
         }
-        for (const child of this._childNodes) {
+        for (const child of this.childNodes) {
             child.renderTo(context, t, this._zIndex);
         }
     }
 
     private _localTransform: Transform2d = Transform2d.identity;
     private _zIndex: number = 0;
-    private readonly _objects: SceneObject[] = [];
-    private readonly _childNodes: SceneNode[] = [];
+    public readonly objects: T[] = [];
+    public readonly childNodes: SceneNode<T>[] = [];
 }
 
-class Scene implements Renderable {
+class Scene<T extends SceneObject> implements Renderable {
     public renderTo(context: RenderContext, transform: Transform2d, zIndex: number): void {
         this._rootNode.renderTo(context, transform, zIndex);
     }
 
-    private readonly _rootNode: SceneNode = new SceneNode();
+    private readonly _rootNode: SceneNode<T> = new SceneNode<T>();
 }
 
 

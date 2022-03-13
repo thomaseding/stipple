@@ -51,6 +51,8 @@ function roundUpToMultipleOf(value: number, k: number): number {
 interface BuildQuiltInfo {
     readonly abGridDotOffset: Vector2d;
     readonly abGrid: Grid2d<A | B>;
+    readonly colorA: Color;
+    readonly colorB: Color;
 }
 
 interface BuildPatchInfo {
@@ -83,8 +85,8 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
             const patchInfo: BuildPatchInfo = {
                 abGridDotOffset: info.abGridDotOffset.subtract(dotPadding),
                 abGrid: info.abGrid,
-                colorA: Color.black,
-                colorB: Color.white,
+                colorA: info.colorA,
+                colorB: info.colorB,
                 patchOffset: new Vector2d(x, y),
             };
             const patch = buildPatch(patchInfo);
@@ -94,7 +96,7 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
     return new Quilt(quiltGrid);
 }
 
-function downscale(grid: Grid2d<Patch>): Grid2d<Patch> {
+function bayerizePatchGrid(grid: ReadonlyGrid2d<Patch>): Grid2d<Patch> {
     const inv = 1 / Patch.extent.area();
     return Grid2d.build(grid.extent(), (position: Point2d) => {
         const patch = grid.getAt(position);
@@ -103,4 +105,8 @@ function downscale(grid: Grid2d<Patch>): Grid2d<Patch> {
         const lowResolution = Dither.Bayer.patternFromRatio(ratio);
         return patch.updatePattern(lowResolution);
     });
+}
+
+function bayerizeQuilt(quilt: Quilt): Quilt {
+    return new Quilt(bayerizePatchGrid(quilt.patchGrid()));
 }

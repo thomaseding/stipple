@@ -40,23 +40,25 @@ namespace Stipple {
 
     const defaultTileExtent = Vector2d.square(24);
 
-    function generateRandomTiles(palette: ColorPalette): Grid2d<Patch> {
-        return Grid2d.build(defaultTileExtent, () => {
+    function generateRandomQuilt(palette: ColorPalette): Quilt {
+        const patches = Grid2d.build(defaultTileExtent, () => {
             const blacklist: number[] = [1];
             return randomTile(palette, blacklist);
         });
+        return new Quilt(patches);
     }
 
-    function generateTiles(colorA: Color, colorB: Color): Grid2d<Patch> {
-        return Grid2d.build(defaultTileExtent, () => {
+    function generateSimpleQuilt(colorA: Color, colorB: Color): Quilt {
+        const patches = Grid2d.build(defaultTileExtent, () => {
             return new Patch(colorA, colorB);
         });
+        return new Quilt(patches);
     }
 
-    let _cachedBackground: Grid2d<Patch> | null = null;
-    function generateBackgroundTilesCached(palette: ColorPalette): Grid2d<Patch> {
+    let _cachedBackground: Quilt | null = null;
+    function generateBackgroundQuiltCached(palette: ColorPalette): Quilt {
         if (!_cachedBackground) {
-            _cachedBackground = generateRandomTiles(palette);
+            _cachedBackground = generateRandomQuilt(palette);
         }
         return _cachedBackground;
     }
@@ -70,19 +72,42 @@ namespace Stipple {
     }
 
     interface Layers {
-        readonly background: Grid2d<Patch>;
-        readonly shape: Grid2d<Patch>;
+        readonly background: SceneNode<Quilt>;
+        readonly shape: SceneNode<Quilt>;
+    }
+
+    function generateBackgroundLayer(palette: ColorPalette): SceneNode<Quilt> {
+        const bg = generateBackgroundQuiltCached(palette);
+        const node = new SceneNode<Quilt>();
+        node.objects.push(bg);
+        return node;
+    }
+
+    function generateShapeLayer(palette: ColorPalette, shapeDotOffset: Vector2d): SceneNode<Quilt> {
+        const buildInfo: BuildQuiltInfo = {
+            abGrid: generateShapeCached(),
+            abGridDotOffset: shapeDotOffset,
+            colorA: new IndexedColor(palette, 0),
+            colorB: new IndexedColor(palette, 1),
+        };
+        const shapePixelOffset = shapeDotOffset.scale(drawScale);
+        const shape = buildQuilt(buildInfo);
+        const node = new SceneNode<Quilt>();
+        node.objects.push(shape);
+        node.setLocalTransform(Transform2d.translateBy(shapePixelOffset));
+        return node;
     }
 
     function generateLayers(palette: ColorPalette, shapePixelOffset = Vector2d.zero): Layers {
-        const allTiles = generateBackgroundTilesCached(palette);
-        const shape = generateShapeCached().setObjectCoord(shapePixelOffset);
-        const shapeTiles = convertToTileGrid(palette, shape);
-        //mergeIntoGrid(allTiles, shapeTiles, (tile) => tile.pattern().countOf(B) > 0);
-        return {
-            background: allTiles,
-            shape: shapeTiles,
+        const startTime = performance.now();
+        const shapeDotOffset = shapePixelOffset.divide(Patch.extent).map(Math.floor);
+        const layers: Layers = {
+            background: generateBackgroundLayer(palette),
+            shape: generateShapeLayer(palette, shapeDotOffset),
         };
+        const endTime = performance.now();
+        console.log("generateLayers", endTime - startTime);
+        return layers;
     }
 
     const standardPalette = new ColorPalette([
@@ -145,38 +170,34 @@ namespace Stipple {
         }
 
         public render(redrawAll: boolean): void {
+            redrawAll = true; // TODO
             const startTime = performance.now();
             const ls = this._layers;
             for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
+                const context = canvas.newRenderContext();
                 if (redrawAll) {
-                    canvas.renderTileGrid(Coord2d.origin, ls.background);
+                    ls.background.renderTo(context, Transform2d.identity, 0);
+                    if (canvas === this._ditheredCanvas) {
+                        ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
+                    }
+                    ls.shape.renderTo(context, Transform2d.identity, 0);
                 }
                 else {
-                    const s = ls.shape;
-                    const _1 = Coord2d.unit;
-                    const _2 = Coord2d.square(2);
-                    const bg = ls.background.subgrid(s.position().subtract(_2).max(Coord2d.origin), s.extent().add(_2));
-                    canvas.renderTileGrid(Coord2d.origin, bg);
+                    throw Error("todo");
                 }
-                let transform = canvas === this._sceneCanvas ? identity : downscale;
-                // canvas.renderTileGrid(Coord2d.origin, transform(ls.shape));
+                canvas.commit(context);
             }
             this._paletteCanvas.render();
             const endTime = performance.now();
-
-            this._sceneCanvas.commitRender();
-            this._ditheredCanvas.commitRender();
-            this._paletteCanvas.commitRender();
-
-            console.log(endTime - startTime);
+            console.log("App.render", endTime - startTime);
         }
 
         public doSomething(): void {
-            let defaultLogicalPixelOffset = new Coord2d(2 * Patch.extent.x, 3 * Patch.extent.y);
+            let defaultLogicalPixelOffset = new Vector2d(2 * Patch.extent.x, 3 * Patch.extent.y);
             let logicalPixelOffset = defaultLogicalPixelOffset;
 
             const choices = [-1, 0, 1];
-            const pixelMax = defaultTileExtent.scale(Patch.extent);
+            const pixelMax = defaultTileExtent.multiply(Patch.extent);
             const rect = this._sceneCanvas.canvas().getBoundingClientRect();
             const k = 0.5 * drawScale;
             const left = rect.left + k * _cachedShape!.extent().x;
@@ -186,23 +207,20 @@ namespace Stipple {
             let x: number = 0;
             let y: number = 0;
             this._sceneCanvas.canvas().addEventListener("mousemove", (e: MouseEvent) => {
-                let pos = new Coord2d(e.clientX - left, e.clientY - top);
-                pos = pos.scale(invDrawScale);
-                pos = pos.map(Math.floor);
-                x = pos.x;
-                y = pos.y;
+                let offset = new Vector2d(e.clientX - left, e.clientY - top);
+                offset = offset.scale(invDrawScale);
+                offset = offset.map(Math.floor);
+                x = offset.x;
+                y = offset.y;
                 x = clamp(0, pixelMax.x, x);
                 y = clamp(0, pixelMax.y, y);
             });
 
             this.render(true);
             setInterval(() => {
-                const startTime = performance.now();
                 this._layers = generateLayers(this._palette, logicalPixelOffset);
-                logicalPixelOffset = new Coord2d(x, y);
+                logicalPixelOffset = new Vector2d(x, y);
                 this.render(false);
-                const endTime = performance.now();
-                //console.log(endTime - startTime);
             }, 100);
         }
 

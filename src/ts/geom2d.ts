@@ -170,12 +170,12 @@ class Box2d {
     private readonly _extent: Vector2d;
 }
 
-class Grid2d<T> {
-    protected readonly __brand_Grid2d: undefined;
+class ReadonlyGrid2d<T> {
+    protected readonly __brand_ReadonlyGrid2d: undefined;
 
-    private constructor(extent: Vector2d, linearGrid: T[]);
-    private constructor(extent: Vector2d, initialValue: (position: Point2d) => T);
-    private constructor(extent: Vector2d, arg2: T[] | ((position: Point2d) => T)) {
+    protected constructor(extent: Vector2d, linearGrid: T[]);
+    protected constructor(extent: Vector2d, initialValue: (position: Point2d) => T);
+    protected constructor(extent: Vector2d, arg2: T[] | ((position: Point2d) => T)) {
         this._extent = extent;
         if (Array.isArray(arg2)) {
             const linearGrid = arg2;
@@ -190,6 +190,30 @@ class Grid2d<T> {
             });
         }
     }
+
+    public extent(): Vector2d {
+        return this._extent;
+    }
+
+    public getAt(index: Point2d | Vector2d): T {
+        const linear = this._linearize(index);
+        const value = this._linearGrid[linear];
+        if (value === undefined) {
+            throw Error();
+        }
+        return value;
+    }
+
+    protected _linearize(index: Point2d | Vector2d): number {
+        return index.y * this._extent.x + index.x;
+    }
+
+    protected readonly _linearGrid: T[];
+    protected readonly _extent: Vector2d;
+}
+
+class Grid2d<T> extends ReadonlyGrid2d<T> {
+    protected readonly __brand_Grid2d: undefined;
 
     public static build<T>(extent: Vector2d, initialValue: (position: Point2d) => T): Grid2d<T> {
         return new Grid2d(extent, initialValue);
@@ -223,19 +247,6 @@ class Grid2d<T> {
         return new Grid2d(extent, linearGrid);
     }
 
-    public extent(): Vector2d {
-        return this._extent;
-    }
-
-    public getAt(index: Point2d | Vector2d): T {
-        const linear = this._linearize(index);
-        const value = this._linearGrid[linear];
-        if (value === undefined) {
-            throw Error();
-        }
-        return value;
-    }
-
     public setAt(index: Point2d | Vector2d, value: T): void {
         const linear = this._linearize(index);
         if (this._linearGrid.length <= linear) {
@@ -243,13 +254,6 @@ class Grid2d<T> {
         }
         this._linearGrid[linear] = value;
     }
-
-    private _linearize(index: Point2d | Vector2d): number {
-        return index.y * this._extent.x + index.x;
-    }
-
-    private readonly _linearGrid: T[];
-    private readonly _extent: Vector2d;
 }
 
 class Transform2d {

@@ -62,5 +62,9 @@ class Quilt implements SceneObject {
         }
     }
 
+    public patchGrid(): ReadonlyGrid2d<Patch> {
+        return this._grid;
+    }
+
     private readonly _grid: Grid2d<Patch>;
 }

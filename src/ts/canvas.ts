@@ -42,6 +42,13 @@ abstract class Canvas {
         return new RenderContext(this._imageData);
     }
 
+    public commit(context: RenderContext) {
+        if (this._imageData !== (context as any)._imageData) {
+            throw Error();
+        }
+        this._context.putImageData(this._imageData, 0, 0);
+    }
+
     protected readonly _canvas: HTMLCanvasElement;
     protected readonly _context: CanvasRenderingContext2D;
     protected readonly _imageData: ImageData;
