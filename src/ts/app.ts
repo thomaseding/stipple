@@ -126,12 +126,12 @@ namespace Stipple {
             const redraw = () => {
                 this.render(false);
             };
-            this._drawCanvas = new DrawCanvas({
+            this._sceneCanvas = new SceneCanvas({
                 canvas: _getCanvas(drawCanvasId),
                 pixelScale: drawScale,
                 redraw: redraw,
             });
-            this._ditheredCanvas = new DrawCanvas({
+            this._ditheredCanvas = new SceneCanvas({
                 canvas: _getCanvas(ditheredCanvasId),
                 pixelScale: drawScale,
                 redraw: redraw,
@@ -147,7 +147,7 @@ namespace Stipple {
         public render(redrawAll: boolean): void {
             const startTime = performance.now();
             const ls = this._layers;
-            for (const canvas of [this._drawCanvas, this._ditheredCanvas]) {
+            for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
                 if (redrawAll) {
                     canvas.renderTileGrid(Coord2d.origin, ls.background);
                 }
@@ -158,13 +158,13 @@ namespace Stipple {
                     const bg = ls.background.subgrid(s.position().subtract(_2).max(Coord2d.origin), s.extent().add(_2));
                     canvas.renderTileGrid(Coord2d.origin, bg);
                 }
-                let transform = canvas === this._drawCanvas ? identity : downscale;
+                let transform = canvas === this._sceneCanvas ? identity : downscale;
                 // canvas.renderTileGrid(Coord2d.origin, transform(ls.shape));
             }
             this._paletteCanvas.render();
             const endTime = performance.now();
 
-            this._drawCanvas.commitRender();
+            this._sceneCanvas.commitRender();
             this._ditheredCanvas.commitRender();
             this._paletteCanvas.commitRender();
 
@@ -177,7 +177,7 @@ namespace Stipple {
 
             const choices = [-1, 0, 1];
             const pixelMax = defaultTileExtent.scale(Patch.extent);
-            const rect = this._drawCanvas.canvas().getBoundingClientRect();
+            const rect = this._sceneCanvas.canvas().getBoundingClientRect();
             const k = 0.5 * drawScale;
             const left = rect.left + k * _cachedShape!.extent().x;
             const top = rect.top + k * _cachedShape!.extent().y;
@@ -185,7 +185,7 @@ namespace Stipple {
 
             let x: number = 0;
             let y: number = 0;
-            this._drawCanvas.canvas().addEventListener("mousemove", (e: MouseEvent) => {
+            this._sceneCanvas.canvas().addEventListener("mousemove", (e: MouseEvent) => {
                 let pos = new Coord2d(e.clientX - left, e.clientY - top);
                 pos = pos.scale(invDrawScale);
                 pos = pos.map(Math.floor);
@@ -209,8 +209,8 @@ namespace Stipple {
         private readonly _palette: ColorPalette = defaultPalette;
         private _prevLayers: Layers = generateLayers(this._palette);
         private _layers: Layers = this._prevLayers;
-        private readonly _drawCanvas: DrawCanvas;
-        private readonly _ditheredCanvas: DrawCanvas;
+        private readonly _sceneCanvas: SceneCanvas;
+        private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;
     }
 
