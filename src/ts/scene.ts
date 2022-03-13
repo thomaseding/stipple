@@ -29,8 +29,7 @@ interface Renderable {
     renderTo(context: RenderContext, transform: Transform2d, zIndex: number): void;
 }
 
-abstract class SceneObject implements Renderable {
-    public abstract renderTo(context: RenderContext, transform: Transform2d, zIndex: number): void;
+interface SceneObject extends Renderable {
 }
 
 class SceneNode implements Renderable {
