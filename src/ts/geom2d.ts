@@ -68,17 +68,13 @@ class Vector2d extends CoordImpl<Vector2d> {
         return new Vector2d(to.x - from.x, to.y - from.y);
     }
 
-    public scale(k: number): Vector2d;
-    public scale(k: Vector2d): Vector2d;
-    public scale(k: Vector2d | number): Vector2d {
-        if (typeof k === "number") {
-            return new Vector2d(k * this.x, k * this.y);
-        }
-        else {
-            return new Vector2d(k.x * this.x, k.y * this.y);
-        }
+    public scale(k: number): Vector2d {
+        return new Vector2d(k * this.x, k * this.y);
     }
 
+    public multiply(other: Vector2d): Vector2d {
+        return new Vector2d(other.x * this.x, other.y * this.y);
+    }
     public add(other: Vector2d): Vector2d {
         return new Vector2d(this.x + other.x, this.y + other.y);
     }
@@ -234,4 +230,48 @@ class Grid2d<T> {
 
     private readonly _linearGrid: T[];
     private readonly _extent: Vector2d;
+}
+
+class Transform2d {
+    protected readonly __brand_Transform2d: undefined;
+
+    private constructor(translation: Vector2d, scale: Vector2d) {
+        this._translation = translation;
+        this._scale = scale;
+    }
+
+    public static readonly identity = new Transform2d(Vector2d.zero, Vector2d.unit);
+
+    public static translateBy(translation: Vector2d) {
+        return new Transform2d(translation, Vector2d.unit);
+    }
+
+    public static scaleBy(scale: Vector2d) {
+        console.assert(scale.x >= 0, "use 3x3 matrices at this point if needed");
+        console.assert(scale.y >= 0, "use 3x3 matrices at this point if needed");
+        return new Transform2d(Vector2d.zero, scale);
+    }
+
+    public then(next: Transform2d): Transform2d {
+        return new Transform2d(this._translation.add(next._translation), this._scale.multiply(next._scale));
+    }
+
+    public applyToPoint(p: Point2d): Point2d {
+        const t = this._translation;
+        const s = this._scale;
+        return new Point2d(
+            s.x * p.x + t.x,
+            s.y * p.y + t.y);
+    }
+
+    public translation(): Vector2d {
+        return this._translation;
+    }
+
+    public scale(): Vector2d {
+        return this._scale;
+    }
+
+    private readonly _translation: Vector2d;
+    private readonly _scale: Vector2d;
 }

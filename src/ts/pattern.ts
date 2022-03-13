@@ -1,6 +1,6 @@
 /// <reference path="geom2d.ts" />
 
-class TilePattern {
+class PatchPattern {
     protected readonly __brand_Pattern: undefined;
 
     private static readonly dim: number = 8;
@@ -8,7 +8,7 @@ class TilePattern {
     public static readonly coords: Point2d[] = this._generateCoords(this.extent);
 
     public constructor(grid: Grid2d<A | B>) {
-        if (!grid.extent().equals(TilePattern.extent)) {
+        if (!grid.extent().equals(PatchPattern.extent)) {
             throw Error();
         }
         this._grid = grid;

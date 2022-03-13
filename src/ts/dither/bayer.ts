@@ -25,7 +25,7 @@ namespace Dither.Bayer {
         _64, // 20
     }
 
-    export function patternFromDensity(density: Density64): TilePattern {
+    export function patternFromDensity(density: Density64): PatchPattern {
         let pattern = _patterns[density];
         if (pattern === undefined) {
             throw Error();
@@ -33,7 +33,7 @@ namespace Dither.Bayer {
         return pattern;
     }
 
-    export function patternFromRatio(ratio: number): TilePattern {
+    export function patternFromRatio(ratio: number): PatchPattern {
         if (ratio < 0 || ratio > 1) {
             throw Error();
         }
@@ -113,14 +113,14 @@ namespace Dither.Bayer {
         }
     }
 
-    function makePattern(encoding: string[]): TilePattern {
+    function makePattern(encoding: string[]): PatchPattern {
         const gridArray: (A | B)[][] = [];
         for (const lane of encoding) {
             const converted = lane.split("").map(_convert);
             gridArray.push(converted);
         }
         const grid = Grid2d.from2d(gridArray);
-        return new TilePattern(grid);
+        return new PatchPattern(grid);
     }
 
     const _patterns = [

@@ -19,7 +19,7 @@ namespace Stipple {
         return x;
     }
 
-    function randomTile(palette: ColorPalette, blacklist: number[] = []): Tile {
+    function randomTile(palette: ColorPalette, blacklist: number[] = []): Patch {
         const randIndex = () => {
             let x: number;
             do {
@@ -27,39 +27,38 @@ namespace Stipple {
             } while (blacklist.indexOf(x) >= 0);
             return x;
         };
-        const tile = new Tile(palette);
         const a = randIndex();
         let b: number;
         do {
             b = randIndex();
         } while (b === a);
-        tile.setPaletteIndex(a, A);
-        tile.setPaletteIndex(b, B);
-        tile.setPattern(Dither.Bayer.patternFromRatio(Math.random()));
-        return tile;
+        const colorA = new IndexedColor(palette, a);
+        const colorB = new IndexedColor(palette, b);
+        const pattern = Dither.Bayer.patternFromRatio(Math.random());
+        return new Patch(colorA, colorB, pattern);
     }
 
-    const defaultTileExtent = Coord2d.square(24);
+    const defaultTileExtent = Vector2d.square(24);
 
-    function generateRandomTiles(palette: ColorPalette): Grid2d<Tile> {
-        return Grid2d.build(Coord2d.origin, defaultTileExtent, () => {
+    function generateRandomTiles(palette: ColorPalette): Grid2d<Patch> {
+        return Grid2d.build(defaultTileExtent, () => {
             const blacklist: number[] = [1];
             return randomTile(palette, blacklist);
         });
     }
 
-    function generateBlackTiles(palette: ColorPalette): Grid2d<Tile> {
-        return Grid2d.build(Coord2d.origin, defaultTileExtent, () => {
-            return new Tile(palette);
+    function generateTiles(colorA: Color, colorB: Color): Grid2d<Patch> {
+        return Grid2d.build(defaultTileExtent, () => {
+            return new Patch(colorA, colorB);
         });
     }
 
-    let _cachedBackground: Grid2d<Tile> | null = null;
-    function generateBackgroundTilesCached(palette: ColorPalette): Grid2d<Tile> {
+    let _cachedBackground: Grid2d<Patch> | null = null;
+    function generateBackgroundTilesCached(palette: ColorPalette): Grid2d<Patch> {
         if (!_cachedBackground) {
             _cachedBackground = generateRandomTiles(palette);
         }
-        return _cachedBackground.setObjectCoord(Coord2d.origin);
+        return _cachedBackground;
     }
 
     let _cachedShape: Grid2d<A | B> | null = null;
@@ -71,11 +70,11 @@ namespace Stipple {
     }
 
     interface Layers {
-        readonly background: Grid2d<Tile>;
-        readonly shape: Grid2d<Tile>;
+        readonly background: Grid2d<Patch>;
+        readonly shape: Grid2d<Patch>;
     }
 
-    function generateLayers(palette: ColorPalette, shapePixelOffset = Coord2d.origin): Layers {
+    function generateLayers(palette: ColorPalette, shapePixelOffset = Vector2d.zero): Layers {
         const allTiles = generateBackgroundTilesCached(palette);
         const shape = generateShapeCached().setObjectCoord(shapePixelOffset);
         const shapeTiles = convertToTileGrid(palette, shape);
@@ -173,11 +172,11 @@ namespace Stipple {
         }
 
         public doSomething(): void {
-            let defaultLogicalPixelOffset = new Coord2d(2 * Tile.extent.x, 3 * Tile.extent.y);
+            let defaultLogicalPixelOffset = new Coord2d(2 * Patch.extent.x, 3 * Patch.extent.y);
             let logicalPixelOffset = defaultLogicalPixelOffset;
 
             const choices = [-1, 0, 1];
-            const pixelMax = defaultTileExtent.scale(Tile.extent);
+            const pixelMax = defaultTileExtent.scale(Patch.extent);
             const rect = this._drawCanvas.canvas().getBoundingClientRect();
             const k = 0.5 * drawScale;
             const left = rect.left + k * _cachedShape!.extent().x;

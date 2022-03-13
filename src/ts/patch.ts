@@ -1,12 +1,12 @@
 /// <reference path="pattern.ts" />
 
-class Tile {
+class Patch {
     protected readonly __brand_Tile: undefined;
 
-    public static readonly extent: Vector2d = TilePattern.extent;
-    public static readonly localCoords: Point2d[] = TilePattern.coords;
+    public static readonly extent: Vector2d = PatchPattern.extent;
+    public static readonly localCoords: Point2d[] = PatchPattern.coords;
 
-    public constructor(colorA: Color, colorB: Color, pattern?: TilePattern) {
+    public constructor(colorA: Color, colorB: Color, pattern?: PatchPattern) {
         if (!pattern) {
             pattern = Dither.Bayer.patternFromDensity(Dither.Bayer.Density64._0);
         }
@@ -15,12 +15,12 @@ class Tile {
         this._colorB = colorB;
     }
 
-    public pattern(): TilePattern {
+    public pattern(): PatchPattern {
         return this._pattern;
     }
 
-    public newTile(pattern: TilePattern): Tile {
-        return new Tile(this._colorA, this._colorB, pattern);
+    public newTile(pattern: PatchPattern): Patch {
+        return new Patch(this._colorA, this._colorB, pattern);
     }
 
     public colorAt(index: Point2d): Color {
@@ -29,7 +29,9 @@ class Tile {
         return color;
     }
 
-    private _pattern: TilePattern;
+    private _pattern: PatchPattern;
     private _colorA: Color;
     private _colorB: Color;
 }
+
+type Quilt = Grid2d<Patch>;

@@ -22,15 +22,15 @@ class Canvas {
         this._pixelScale = info.pixelScale;
     }
 
-    public renderTileGrid(pixelOffset: Coord2d, grid: Grid2d<Tile>): void {
-        grid.forEach((logicalTilePos: Coord2d, tile: Tile) => {
-            const pixelTilePos = logicalTilePos.scale(Tile.extent).add(pixelOffset);
+    public renderTileGrid(pixelOffset: Coord2d, grid: Grid2d<Patch>): void {
+        grid.forEach((logicalTilePos: Coord2d, tile: Patch) => {
+            const pixelTilePos = logicalTilePos.scale(Patch.extent).add(pixelOffset);
             this.renderTile(pixelTilePos, tile);
         });
         //this.strokeRect(pixelOffset, grid.extent().scale(this._pixelScale), Color.gray);
     }
 
-    public renderTile(pixelOffset: Coord2d, tile: Tile): void {
+    public renderTile(pixelOffset: Coord2d, tile: Patch): void {
         const grid = tile.toPixelGrid();
         this.renderPixelGrid(pixelOffset, grid);
     }
