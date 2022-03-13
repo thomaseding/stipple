@@ -67,8 +67,8 @@ function buildPatch(info: BuildPatchInfo): Patch {
     const patchGrid = Grid2d.fill<A | B>(Patch.extent, A);
     for (const localOffset of Patch.localOffsets) {
         const patchDotOffset = info.patchOffset.add(localOffset).multiply(Patch.extent);
-        const dotOffset = info.abGridDotOffset.subtract(patchDotOffset);
-        const ab = info.abGrid.getAt(dotOffset);
+        const dotOffset = patchDotOffset.subtract(info.abGridDotOffset);
+        const ab = info.abGrid.tryGetAt(dotOffset) || A;
         patchGrid.setAt(localOffset, ab);
     }
     const pattern = new PatchPattern(patchGrid);

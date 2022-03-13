@@ -8,26 +8,6 @@ class CoordImpl<Derived extends CoordImpl<Derived>> {
         return this.x === other.x && this.y === other.y;
     }
 
-    public map(func: (u: number) => number): Derived {
-        return new CoordImpl(func(this.x), func(this.y)) as Derived;
-    }
-
-    public zipWith(other: Derived, func: (u: number, v: number) => number): Derived {
-        return new CoordImpl(func(this.x, other.x), func(this.y, other.y)) as Derived;
-    }
-
-    public min(other: Derived): Derived {
-        return new CoordImpl(
-            Math.min(this.x, other.x),
-            Math.min(this.y, other.y)) as Derived;
-    }
-
-    public max(other: Derived): Derived {
-        return new CoordImpl(
-            Math.max(this.x, other.x),
-            Math.max(this.y, other.y)) as Derived;
-    }
-
     public isInteger(): boolean {
         return Number.isInteger(this.x) && Number.isInteger(this.y);
     }
@@ -55,6 +35,26 @@ class Point2d extends CoordImpl<Point2d> {
 
     public subtract(other: Vector2d): Point2d {
         return new Point2d(this.x - other.x, this.y - other.y);
+    }
+
+    public map(func: (u: number) => number): Point2d {
+        return new Point2d(func(this.x), func(this.y));
+    }
+
+    public zipWith(other: Point2d, func: (u: number, v: number) => number): Point2d {
+        return new Point2d(func(this.x, other.x), func(this.y, other.y));
+    }
+
+    public min(other: Point2d): Point2d {
+        return new Point2d(
+            Math.min(this.x, other.x),
+            Math.min(this.y, other.y));
+    }
+
+    public max(other: Point2d): Point2d {
+        return new Point2d(
+            Math.max(this.x, other.x),
+            Math.max(this.y, other.y));
     }
 }
 
@@ -122,6 +122,26 @@ class Vector2d extends CoordImpl<Vector2d> {
     public area(): number {
         return this.x * this.y;
     }
+
+    public map(func: (u: number) => number): Vector2d {
+        return new Vector2d(func(this.x), func(this.y));
+    }
+
+    public zipWith(other: Vector2d, func: (u: number, v: number) => number): Vector2d {
+        return new Vector2d(func(this.x, other.x), func(this.y, other.y));
+    }
+
+    public min(other: Vector2d): Vector2d {
+        return new Vector2d(
+            Math.min(this.x, other.x),
+            Math.min(this.y, other.y));
+    }
+
+    public max(other: Vector2d): Vector2d {
+        return new Vector2d(
+            Math.max(this.x, other.x),
+            Math.max(this.y, other.y));
+    }
 }
 
 class Box2d {
@@ -184,10 +204,13 @@ class ReadonlyGrid2d<T> {
         else {
             const initialValue = arg2;
             this._linearGrid = [];
-            const box = new Box2d(Point2d.origin, Vector2d.unit);
+            const box = new Box2d(Point2d.origin, extent);
             box.forEachPosition((position: Point2d) => {
                 this._linearGrid.push(initialValue(position));
             });
+        }
+        if (this._extent.area() !== this._linearGrid.length) {
+            throw Error();
         }
     }
 
@@ -195,9 +218,13 @@ class ReadonlyGrid2d<T> {
         return this._extent;
     }
 
-    public getAt(index: Point2d | Vector2d): T {
+    public tryGetAt(index: Point2d | Vector2d): T | undefined {
         const linear = this._linearize(index);
-        const value = this._linearGrid[linear];
+        return this._linearGrid[linear];
+    }
+
+    public getAt(index: Point2d | Vector2d): T {
+        const value = this.tryGetAt(index);
         if (value === undefined) {
             throw Error();
         }

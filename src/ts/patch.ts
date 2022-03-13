@@ -1,4 +1,5 @@
 /// <reference path="pattern.ts" />
+/// <reference path="dither/bayer.ts" />
 
 class Patch implements SceneObject {
     protected readonly __brand_Tile: undefined;
