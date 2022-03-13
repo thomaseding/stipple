@@ -14,7 +14,7 @@ class PatchPattern {
         this._grid = grid;
     }
 
-    public at(position: Point2d): A | B {
+    public at(position: Point2d | Vector2d): A | B {
         return this._grid.getAt(position);
     }
 

@@ -41,6 +41,10 @@ class Point2d extends CoordImpl<Point2d> {
 
     public static readonly origin = new Point2d(0, 0);
 
+    public toVector(): Vector2d {
+        return new Vector2d(this.x, this.y);
+    }
+
     public add(other: Vector2d): Point2d {
         return new Point2d(this.x + other.x, this.y + other.y);
     }
@@ -66,6 +70,10 @@ class Vector2d extends CoordImpl<Vector2d> {
 
     public static fromTo(from: Point2d, to: Point2d): Vector2d {
         return new Vector2d(to.x - from.x, to.y - from.y);
+    }
+
+    public toPoint(): Point2d {
+        return new Point2d(this.x, this.y);
     }
 
     public scale(k: number): Vector2d {
@@ -207,7 +215,7 @@ class Grid2d<T> {
         return this._extent;
     }
 
-    public getAt(index: Point2d): T {
+    public getAt(index: Point2d | Vector2d): T {
         const linear = this._linearize(index);
         const value = this._linearGrid[linear];
         if (value === undefined) {
@@ -216,7 +224,7 @@ class Grid2d<T> {
         return value;
     }
 
-    public setAt(index: Point2d, value: T): void {
+    public setAt(index: Point2d | Vector2d, value: T): void {
         const linear = this._linearize(index);
         if (this._linearGrid.length <= linear) {
             throw Error();
@@ -224,7 +232,7 @@ class Grid2d<T> {
         this._linearGrid[linear] = value;
     }
 
-    private _linearize(index: Point2d): number {
+    private _linearize(index: Point2d | Vector2d): number {
         return index.y * this._extent.x + index.x;
     }
 

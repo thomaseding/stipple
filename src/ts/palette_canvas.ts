@@ -14,7 +14,7 @@ class PaletteCanvas extends Canvas {
             const dim = 4;
             const x = i % dim;
             const y = Math.floor(i / dim);
-            const pos = Point2d.origin.add(new Vector2d(x, y).scale(this._colorPixelExtent));
+            const pos = Point2d.origin.add(new Vector2d(x, y).multiply(this._colorPixelExtent));
             this._colorPixelPositions.push(pos);
         }
 
