@@ -1,66 +1,101 @@
-class Coord2d implements Object2d<Coord2d> {
-    protected readonly __brand_Coord2d: undefined;
-
-    public constructor(x: number, y: number) {
+class CoordImpl<Derived extends CoordImpl<Derived>> {
+    protected constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
     }
 
-    public static readonly origin = new Coord2d(0, 0);
-    public static readonly unit = new Coord2d(1, 1);
-
-    public getObjectCoord(): Coord2d {
-        return this;
-    }
-
-    public setObjectCoord(coord: Coord2d): Coord2d {
-        return coord;
-    }
-
-    public equals(other: Coord2d): boolean {
+    public equals(other: Derived): boolean {
         return this.x === other.x && this.y === other.y;
     }
 
-    public map(func: (v: number) => number): Coord2d {
-        return new Coord2d(func(this.x), func(this.y));
+    public map(func: (v: number) => number): Derived {
+        return new CoordImpl(func(this.x), func(this.y)) as Derived;
     }
 
-    public add(other: Coord2d): Coord2d {
-        return new Coord2d(this.x + other.x, this.y + other.y);
+    public min(other: Derived): Derived {
+        return new CoordImpl(
+            Math.min(this.x, other.x),
+            Math.min(this.y, other.y)) as Derived;
     }
 
-    public subtract(other: Coord2d): Coord2d {
-        return new Coord2d(this.x - other.x, this.y - other.y);
-    }
-
-    public scale(k: number): Coord2d;
-    public scale(k: Coord2d): Coord2d;
-    public scale(k: Coord2d | number): Coord2d {
-        if (typeof k === "number") {
-            return new Coord2d(k * this.x, k * this.y);
-        }
-        else {
-            return new Coord2d(k.x * this.x, k.y * this.y);
-        }
-    }
-
-    public static square(dim: number): Coord2d {
-        return new Coord2d(dim, dim);
-    }
-
-    public divide(other: Coord2d): Coord2d {
-        return new Coord2d(this.x / other.x, this.y / other.y);
-    }
-
-    public mod(other: Coord2d): Coord2d {
-        return new Coord2d(this.x % other.x, this.y % other.y);
+    public max(other: Derived): Derived {
+        return new CoordImpl(
+            Math.max(this.x, other.x),
+            Math.max(this.y, other.y)) as Derived;
     }
 
     public isInteger(): boolean {
         return Number.isInteger(this.x) && Number.isInteger(this.y);
     }
 
-    public divides(other: Coord2d): boolean {
+    public readonly x: number;
+    public readonly y: number;
+}
+
+class Point2d extends CoordImpl<Point2d> {
+    protected readonly __brand_Point2d: undefined;
+
+    public constructor(x: number, y: number) {
+        super(x, y);
+    }
+
+    public static readonly origin = new Point2d(0, 0);
+
+    public add(other: Vector2d): Point2d {
+        return new Point2d(this.x + other.x, this.y + other.y);
+    }
+
+    public subtract(other: Vector2d): Point2d {
+        return new Point2d(this.x - other.x, this.y - other.y);
+    }
+}
+
+class Vector2d extends CoordImpl<Vector2d> {
+    protected readonly __brand_Vector2d: undefined;
+
+    public constructor(x: number, y: number) {
+        super(x, y);
+    }
+
+    public static readonly zero = new Vector2d(0, 0);
+    public static readonly unit = new Vector2d(1, 1);
+
+    public static square(dim: number): Vector2d {
+        return new Vector2d(dim, dim);
+    }
+
+    public static fromTo(from: Point2d, to: Point2d): Vector2d {
+        return new Vector2d(to.x - from.x, to.y - from.y);
+    }
+
+    public scale(k: number): Vector2d;
+    public scale(k: Vector2d): Vector2d;
+    public scale(k: Vector2d | number): Vector2d {
+        if (typeof k === "number") {
+            return new Vector2d(k * this.x, k * this.y);
+        }
+        else {
+            return new Vector2d(k.x * this.x, k.y * this.y);
+        }
+    }
+
+    public add(other: Vector2d): Vector2d {
+        return new Vector2d(this.x + other.x, this.y + other.y);
+    }
+
+    public subtract(other: Vector2d): Vector2d {
+        return new Vector2d(this.x - other.x, this.y - other.y);
+    }
+
+    public divide(other: Vector2d): Vector2d {
+        return new Vector2d(this.x / other.x, this.y / other.y);
+    }
+
+    public mod(other: Vector2d): Vector2d {
+        return new Vector2d(this.x % other.x, this.y % other.y);
+    }
+
+    public divides(other: Vector2d): boolean {
         return other.divide(this).isInteger();
     }
 
@@ -71,33 +106,61 @@ class Coord2d implements Object2d<Coord2d> {
     public magnitude(): number {
         return Math.sqrt(this.magnitudeSquared());
     }
-
-    public readonly x: number;
-    public readonly y: number;
 }
 
-interface Object2d<T> {
-    getObjectCoord(): Coord2d;
-    setObjectCoord(coord: Coord2d): T;
-}
-
-namespace Object2d {
-    export function translate<T>(o: Object2d<T>, delta: Coord2d): T {
-        const c = o.getObjectCoord();
-        const x = c.x + delta.x;
-        const y = c.y + delta.y;
-        return o.setObjectCoord(new Coord2d(x, y));
+class Box2d {
+    public constructor(position: Point2d, extent: Vector2d) {
+        this._min = position;
+        this._extent = extent;
     }
+
+    public forEachPosition(action: (position: Point2d) => void): void {
+        for (let x = 0; x < this._extent.x; ++x) {
+            for (let y = 0; y < this._extent.y; ++y) {
+                action(this._min.add(new Vector2d(x, y)));
+            }
+        }
+    }
+
+    public min(): Point2d {
+        return this._min;
+    }
+
+    public max(): Point2d {
+        return this._min.add(this._extent);
+    }
+
+    public extent(): Vector2d {
+        return this._extent;
+    }
+
+    public area(): number {
+        return this._extent.x * this._extent.y;
+    }
+
+    public containsPoint(point: Point2d): boolean {
+        const min = this._min;
+        const max = this.max();
+        return min.x <= point.x && point.x < max.x
+            && min.y <= point.y && point.y < max.y;
+    }
+
+    public containsBox(other: Box2d): boolean {
+        return this.containsPoint(other._min)
+            && this.containsPoint(other.max().subtract(Vector2d.unit));
+    }
+
+    private readonly _min: Point2d;
+    private readonly _extent: Vector2d;
 }
 
-class Grid2d<T> implements Object2d<Grid2d<T>> {
+class Grid2d<T> {
     protected readonly __brand_Grid2d: undefined;
 
-    private constructor(position: Coord2d, extent: Coord2d, linearGrid: T[]);
-    private constructor(position: Coord2d, extent: Coord2d, initialValue: (position: Coord2d) => T);
-    private constructor(position: Coord2d, extent: Coord2d, arg2: T[] | ((position: Coord2d) => T)) {
-        this._position = position;
-        this._extent = extent!;
+    private constructor(extent: Vector2d, linearGrid: T[]);
+    private constructor(extent: Vector2d, initialValue: (position: Point2d) => T);
+    private constructor(extent: Vector2d, arg2: T[] | ((position: Point2d) => T)) {
+        this._extent = extent;
         if (Array.isArray(arg2)) {
             const linearGrid = arg2;
             this._linearGrid = linearGrid;
@@ -105,29 +168,27 @@ class Grid2d<T> implements Object2d<Grid2d<T>> {
         else {
             const initialValue = arg2;
             this._linearGrid = [];
-            for (let y = 0; y < this._extent.y; ++y) {
-                for (let x = 0; x < this._extent.x; ++x) {
-                    const coord = new Coord2d(position.x + x, position.y + y);
-                    this._linearGrid.push(initialValue(coord));
-                }
-            }
+            const box = new Box2d(Point2d.origin, Vector2d.unit);
+            box.forEachPosition((position: Point2d) => {
+                this._linearGrid.push(initialValue(position));
+            });
         }
     }
 
-    public static build<T>(position: Coord2d, extent: Coord2d, initialValue: (position: Coord2d) => T): Grid2d<T> {
-        return new Grid2d(position, extent, initialValue);
+    public static build<T>(extent: Vector2d, initialValue: (position: Point2d) => T): Grid2d<T> {
+        return new Grid2d(extent, initialValue);
     }
 
-    public static fill<T>(position: Coord2d, extent: Coord2d, initialValue: T): Grid2d<T> {
+    public static fill<T>(extent: Vector2d, initialValue: T): Grid2d<T> {
         const linearGrid = Array(extent.x * extent.y).fill(initialValue);
-        return new Grid2d(position, extent, linearGrid);
+        return new Grid2d(extent, linearGrid);
     }
 
-    public static from1d<T>(position: Coord2d, extent: Coord2d, linearGrid: T[]): Grid2d<T> {
-        return new Grid2d(position, extent, linearGrid.slice());
+    public static from1d<T>(extent: Vector2d, linearGrid: T[]): Grid2d<T> {
+        return new Grid2d(extent, linearGrid.slice());
     }
 
-    public static from2d<T>(position: Coord2d, grid: T[][]): Grid2d<T> {
+    public static from2d<T>(grid: T[][]): Grid2d<T> {
         const linearGrid: T[] = [];
         const height = grid.length;
         const width = grid[0]?.length || 0;
@@ -142,19 +203,15 @@ class Grid2d<T> implements Object2d<Grid2d<T>> {
                 linearGrid.push(x);
             });
         });
-        const extent = new Coord2d(width, height);
-        return new Grid2d(position, extent, linearGrid);
+        const extent = new Vector2d(width, height);
+        return new Grid2d(extent, linearGrid);
     }
 
-    public getObjectCoord(): Coord2d {
-        return this._position;
+    public extent(): Vector2d {
+        return this._extent;
     }
 
-    public setObjectCoord(position: Coord2d): Grid2d<T> {
-        return Grid2d.from1d(position, this._extent, this._linearGrid);
-    }
-
-    public indexedGet(index: Coord2d): T {
+    public getAt(index: Point2d): T {
         const linear = this._linearize(index);
         const value = this._linearGrid[linear];
         if (value === undefined) {
@@ -163,12 +220,7 @@ class Grid2d<T> implements Object2d<Grid2d<T>> {
         return value;
     }
 
-    public getAt(position: Coord2d): T {
-        const index = position.subtract(this._position);
-        return this.indexedGet(index);
-    }
-
-    public indexedSet(index: Coord2d, value: T): void {
+    public setAt(index: Point2d, value: T): void {
         const linear = this._linearize(index);
         if (this._linearGrid.length <= linear) {
             throw Error();
@@ -176,61 +228,10 @@ class Grid2d<T> implements Object2d<Grid2d<T>> {
         this._linearGrid[linear] = value;
     }
 
-    public setAt(position: Coord2d, value: T): void {
-        const index = position.subtract(this._position);
-        this.indexedSet(index, value);
-    }
-
-    public forEach(action: (offset: Coord2d, value: T) => void): void {
-        for (let x = 0; x < this._extent.x; ++x) {
-            for (let y = 0; y < this._extent.y; ++y) {
-                const offset = new Coord2d(x, y);
-                const value = this.indexedGet(offset);
-                action(offset, value);
-            }
-        }
-    }
-
-    public position(): Coord2d {
-        return this._position;
-    }
-
-    public extent(): Coord2d {
-        return this._extent;
-    }
-
-    public area(): number {
-        return this._extent.x * this._extent.y;
-    }
-
-    private _linearize(index: Coord2d): number {
+    private _linearize(index: Point2d): number {
         return index.y * this._extent.x + index.x;
     }
 
     private readonly _linearGrid: T[];
-    private readonly _position: Coord2d;
-    private readonly _extent: Coord2d;
-}
-
-function rectContains(min: Coord2d, max: Coord2d, needle: Coord2d): boolean {
-    return min.x <= needle.x && needle.x < max.x
-        && min.y <= needle.y && needle.y < max.y;
-}
-
-function gridContainsCoord<T>(self: Grid2d<T>, other: Coord2d): boolean {
-    return rectContains(self.position(), self.position().add(self.extent()), other);
-}
-
-function gridContainsGrid<T>(self: Grid2d<T>, other: Grid2d<T>): boolean {
-    return gridContainsCoord(self, other.position())
-        && gridContainsCoord(self, other.position().add(other.extent()).subtract(Coord2d.unit));
-}
-
-function mergeIntoGrid<T>(self: Grid2d<T>, other: Grid2d<T>, predicate: (value: T) => boolean): void {
-    other.forEach((offset: Coord2d, value: T) => {
-        const pos = other.position().add(offset);
-        if (gridContainsCoord(self, pos) && predicate(value)) {
-            self.setAt(pos, value);
-        }
-    });
+    private readonly _extent: Vector2d;
 }

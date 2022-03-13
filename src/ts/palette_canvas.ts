@@ -14,8 +14,8 @@ class PaletteCanvas extends Canvas {
             const dim = 4;
             const x = i % dim;
             const y = Math.floor(i / dim);
-            const coord = new Coord2d(x, y).scale(this._colorExtent);
-            this._colorPositions.push(coord);
+            const pos = Point2d.origin.add(new Vector2d(x, y).scale(this._colorPixelExtent));
+            this._colorPixelPositions.push(pos);
         }
 
         this._picker = document.createElement("input");
@@ -38,9 +38,9 @@ class PaletteCanvas extends Canvas {
         const outlineColor = Color.white.toRgb().scale(0.2);
         for (let i = 0; i < this._palette.colorCount(); ++i) {
             const color = this._palette.color(i);
-            const coord = this._colorPositions[i]!;
-            this.fillRect(coord, this._colorExtent, color);
-            this.strokeRect(coord, this._colorExtent, outlineColor);
+            const coord = this._colorPixelPositions[i]!;
+            this.fillRect(coord, this._colorPixelExtent, color);
+            this.strokeRect(coord, this._colorPixelExtent, outlineColor);
         }
 
         this._context.lineWidth = lineWidth;
@@ -48,10 +48,11 @@ class PaletteCanvas extends Canvas {
 
     private _onclick(e: MouseEvent) {
         const rect = this._canvas.getBoundingClientRect();
-        const pos = new Coord2d(e.clientX - rect.left, e.clientY - rect.top);
+        const pos = new Point2d(e.clientX - rect.left, e.clientY - rect.top);
         for (let i = 0; i < this._palette.colorCount(); ++i) {
-            const coord = this._colorPositions[i]!;
-            if (!rectContains(coord, coord.add(this._colorExtent), pos)) {
+            const box = new Box2d(this._colorPixelPositions[i]!, this._colorPixelExtent);
+            console.assert(false, "TODO: convert to box to pixel space");
+            if (!box.containsPoint(pos)) {
                 continue;
             }
             const color = this._palette.color(i);
@@ -70,9 +71,9 @@ class PaletteCanvas extends Canvas {
     }
 
     private readonly _palette: ColorPalette;
-    private readonly _colorExtentScale: number = 60;
-    private readonly _colorExtent: Coord2d = Coord2d.square(this._colorExtentScale);
-    private readonly _colorPositions: Coord2d[] = [];
+    private readonly _colorPixelDim: number = 60;
+    private readonly _colorPixelExtent: Vector2d = Vector2d.square(this._colorPixelDim);
+    private readonly _colorPixelPositions: Point2d[] = [];
     private readonly _picker: HTMLInputElement;
     private _onPick: (() => void) | null = null;
 }

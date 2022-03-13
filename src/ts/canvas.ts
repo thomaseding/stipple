@@ -23,11 +23,11 @@ class Canvas {
     }
 
     public renderTileGrid(pixelOffset: Coord2d, grid: Grid2d<Tile>): void {
-        grid.forEach((tileOffset: Coord2d, tile: Tile) => {
-            const tilePos = grid.position().add(tileOffset).scale(Tile.extent).add(pixelOffset);
-            this.renderTile(tilePos, tile);
+        grid.forEach((logicalTilePos: Coord2d, tile: Tile) => {
+            const pixelTilePos = logicalTilePos.scale(Tile.extent).add(pixelOffset);
+            this.renderTile(pixelTilePos, tile);
         });
-        this.strokeRect(pixelOffset, grid.extent().scale(this._pixelScale), Color.gray);
+        //this.strokeRect(pixelOffset, grid.extent().scale(this._pixelScale), Color.gray);
     }
 
     public renderTile(pixelOffset: Coord2d, tile: Tile): void {
@@ -35,14 +35,14 @@ class Canvas {
         this.renderPixelGrid(pixelOffset, grid);
     }
 
-    public renderPixelGrid(coord: Coord2d, pixels: Grid2d<Pixel>): void {
-        pixels.forEach((coord2: Coord2d, pixel: Pixel) => {
-            const coord3 = coord.add(coord2);
-            this.renderPixel(coord3, pixel);
+    public renderPixelGrid(pixelOffset: Coord2d, pixels: Grid2d<Dot>): void {
+        pixels.forEach((pos: Coord2d, pixel: Dot) => {
+            const p = pixelOffset.add(pos);
+            this.renderPixel(p, pixel);
         });
     }
 
-    public renderPixel(pixelOffset: Coord2d, pixel: Pixel): void {
+    public renderPixel(pixelOffset: Coord2d, pixel: Dot): void {
         this.fillLogicalPixel(pixelOffset.x, pixelOffset.y, pixel.color.toRgb());
     }
 

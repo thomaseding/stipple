@@ -15,6 +15,10 @@ namespace Stipple {
         return Math.min(max, Math.max(min, value));
     }
 
+    function identity<T>(x: T): T {
+        return x;
+    }
+
     function randomTile(palette: ColorPalette, blacklist: number[] = []): Tile {
         const randIndex = () => {
             let x: number;
@@ -66,12 +70,20 @@ namespace Stipple {
         return _cachedShape;
     }
 
-    function generateTiles(palette: ColorPalette, shapePixelOffset = Coord2d.origin): Grid2d<Tile> {
+    interface Layers {
+        readonly background: Grid2d<Tile>;
+        readonly shape: Grid2d<Tile>;
+    }
+
+    function generateLayers(palette: ColorPalette, shapePixelOffset = Coord2d.origin): Layers {
         const allTiles = generateBackgroundTilesCached(palette);
         const shape = generateShapeCached().setObjectCoord(shapePixelOffset);
         const shapeTiles = convertToTileGrid(palette, shape);
-        mergeIntoGrid(allTiles, shapeTiles, (tile) => tile.pattern().countOf(B) > 0);
-        return allTiles;
+        //mergeIntoGrid(allTiles, shapeTiles, (tile) => tile.pattern().countOf(B) > 0);
+        return {
+            background: allTiles,
+            shape: shapeTiles,
+        };
     }
 
     const standardPalette = new ColorPalette([
@@ -113,7 +125,7 @@ namespace Stipple {
     class App {
         public constructor(drawCanvasId: string, ditheredCanvasId: string, paletteCanvasId: string) {
             const redraw = () => {
-                this.render();
+                this.render(false);
             };
             this._drawCanvas = new DrawCanvas({
                 canvas: _getCanvas(drawCanvasId),
@@ -133,13 +145,31 @@ namespace Stipple {
             });
         }
 
-        public render(): void {
-            this._drawCanvas.renderTileGrid(Coord2d.origin, this._tiles);
-            this._ditheredCanvas.renderTileGrid(Coord2d.origin, downscale(this._tiles));
+        public render(redrawAll: boolean): void {
+            const startTime = performance.now();
+            const ls = this._layers;
+            for (const canvas of [this._drawCanvas, this._ditheredCanvas]) {
+                if (redrawAll) {
+                    canvas.renderTileGrid(Coord2d.origin, ls.background);
+                }
+                else {
+                    const s = ls.shape;
+                    const _1 = Coord2d.unit;
+                    const _2 = Coord2d.square(2);
+                    const bg = ls.background.subgrid(s.position().subtract(_2).max(Coord2d.origin), s.extent().add(_2));
+                    canvas.renderTileGrid(Coord2d.origin, bg);
+                }
+                let transform = canvas === this._drawCanvas ? identity : downscale;
+                // canvas.renderTileGrid(Coord2d.origin, transform(ls.shape));
+            }
             this._paletteCanvas.render();
+            const endTime = performance.now();
+
             this._drawCanvas.commitRender();
             this._ditheredCanvas.commitRender();
             this._paletteCanvas.commitRender();
+
+            console.log(endTime - startTime);
         }
 
         public doSomething(): void {
@@ -166,17 +196,20 @@ namespace Stipple {
                 y = clamp(0, pixelMax.y, y);
             });
 
+            this.render(true);
             setInterval(() => {
-                this._tiles = generateTiles(this._palette, logicalPixelOffset);
+                const startTime = performance.now();
+                this._layers = generateLayers(this._palette, logicalPixelOffset);
                 logicalPixelOffset = new Coord2d(x, y);
-                this.render();
+                this.render(false);
+                const endTime = performance.now();
+                //console.log(endTime - startTime);
             }, 100);
-
-            this.render();
         }
 
         private readonly _palette: ColorPalette = defaultPalette;
-        private _tiles: Grid2d<Tile> = generateTiles(this._palette);
+        private _prevLayers: Layers = generateLayers(this._palette);
+        private _layers: Layers = this._prevLayers;
         private readonly _drawCanvas: DrawCanvas;
         private readonly _ditheredCanvas: DrawCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

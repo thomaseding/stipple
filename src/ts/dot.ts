@@ -1,10 +1,10 @@
-class Pixel {
+class Dot {
     protected readonly __brand_Pixel: undefined;
 
-    public constructor(pixel: Pixel);
+    public constructor(pixel: Dot);
     public constructor(color: Color);
-    public constructor(input: Pixel | Color) {
-        if (input instanceof Pixel) {
+    public constructor(input: Dot | Color) {
+        if (input instanceof Dot) {
             const pixel = input;
             this.color = pixel.color;
         }
