@@ -51,14 +51,20 @@ function roundUpToMultipleOf(value: number, k: number): number {
 interface BuildQuiltInfo {
     readonly abGridDotOffset: Vector2d;
     readonly abGrid: Grid2d<A | B>;
-    readonly colorA: Color;
-    readonly colorB: Color;
 }
 
-function buildPatch(info: BuildQuiltInfo, patchOffset: Vector2d): Patch {
+interface BuildPatchInfo {
+    readonly abGridDotOffset: Vector2d;
+    readonly abGrid: Grid2d<A | B>;
+    readonly colorA: Color;
+    readonly colorB: Color;
+    patchOffset: Vector2d;
+}
+
+function buildPatch(info: BuildPatchInfo): Patch {
     const patchGrid = Grid2d.fill<A | B>(Patch.extent, A);
     for (const localOffset of Patch.localOffsets) {
-        const patchDotOffset = patchOffset.add(localOffset).multiply(Patch.extent);
+        const patchDotOffset = info.patchOffset.add(localOffset).multiply(Patch.extent);
         const dotOffset = info.abGridDotOffset.subtract(patchDotOffset);
         const ab = info.abGrid.getAt(dotOffset);
         patchGrid.setAt(localOffset, ab);
@@ -72,17 +78,17 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
     const dotPadding = dotPaddingProto.equals(Vector2d.zero) ? Vector2d.zero : Patch.extent.subtract(dotPaddingProto);
     const quiltExtent = info.abGrid.extent().add(dotPadding).zipWith(Patch.extent, roundUpToMultipleOf).divide(Patch.extent);
     const quiltGrid = Grid2d.fill<Patch>(quiltExtent, Patch.black);
-    const info2: BuildQuiltInfo = {
-        abGridDotOffset: info.abGridDotOffset.subtract(dotPadding),
-        abGrid: info.abGrid,
-        colorA: info.colorA,
-        colorB: info.colorB,
-    };
     for (let x = 0; x < quiltExtent.x; ++x) {
         for (let y = 0; y < quiltExtent.y; ++y) {
-            const patchOffset = new Vector2d(x, y);
-            const patch = buildPatch(info2, patchOffset);
-            quiltGrid.setAt(patchOffset, patch);
+            const patchInfo: BuildPatchInfo = {
+                abGridDotOffset: info.abGridDotOffset.subtract(dotPadding),
+                abGrid: info.abGrid,
+                colorA: Color.black,
+                colorB: Color.white,
+                patchOffset: new Vector2d(x, y),
+            };
+            const patch = buildPatch(patchInfo);
+            quiltGrid.setAt(patchInfo.patchOffset, patch);
         }
     }
     return new Quilt(quiltGrid);
