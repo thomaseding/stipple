@@ -100,13 +100,11 @@ namespace Stipple {
             colorB: Color.yellow,
         };
         //console.log(shapePixelOffset);
-        const [shape, delta] = buildQuilt(buildInfo);
+        const shape = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
         const xform = Transform2d.sequence([
-            Transform2d.translateBy(delta.negate()),
             Transform2d.scaleBy(Vector2d.square(drawScale)),
-            Transform2d.translateBy(shapeOffset.dot),
         ]);
         node.setLocalTransform(xform);
         return node;

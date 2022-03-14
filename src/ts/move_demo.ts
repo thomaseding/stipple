@@ -72,10 +72,10 @@ function buildPatch(info: BuildPatchInfo): Patch {
     return new Patch(info.colorA, info.colorB, pattern);
 }
 
-function buildQuilt(info: BuildQuiltInfo): [Quilt, Vector2d] {
+function buildQuilt(info: BuildQuiltInfo): Quilt {
     const modPatchExtent = info.abGrid.box().min().toVector().mod(Patch.extent);
     const abGrid = info.abGrid.applyAdditionalOffset(modPatchExtent);
-    const quiltExtent = info.abGrid.box().extent().divide(Patch.extent).map(Math.ceil);
+    let quiltExtent = info.abGrid.box().extent().divide(Patch.extent).map(Math.ceil).add(Vector2d.unit);
     const quiltGrid = Grid2d.fill<Patch>(quiltExtent, Patch.black);
     for (let y = 0; y < quiltExtent.y; ++y) {
         for (let x = 0; x < quiltExtent.x; ++x) {
@@ -93,7 +93,7 @@ function buildQuilt(info: BuildQuiltInfo): [Quilt, Vector2d] {
         }
     }
     const quilt = new Quilt(quiltGrid);
-    return [quilt, modPatchExtent];
+    return quilt;
 }
 
 function bayerizePatchGrid(grid: ReadonlyGrid2d<Patch>): Grid2d<Patch> {
