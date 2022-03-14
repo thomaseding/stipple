@@ -67,7 +67,7 @@ namespace Stipple {
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
             //_cachedShape = generateCircle(8 * 10, B);
-            _cachedShape = generateSquare(2, B);
+            _cachedShape = generateTriangle(9, B);
         }
         return _cachedShape;
     }
@@ -236,7 +236,7 @@ namespace Stipple {
         }
 
         private readonly _palette: ColorPalette = defaultPalette;
-        private _layers: Layers = generateLayers(this._palette, Vector2d.square(0));
+        private _layers: Layers = generateLayers(this._palette, new Vector2d(3, 0));
         private readonly _sceneCanvas: SceneCanvas;
         private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

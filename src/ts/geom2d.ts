@@ -228,8 +228,12 @@ class ReadonlyGrid2d<T> {
     }
 
     protected _linearize(index: Point2d | Vector2d): number {
-        console.assert(index.x < this._extent.x);
-        console.assert(index.y < this._extent.y);
+        if (index.x >= this._extent.x) {
+            throw Error();
+        }
+        if (index.y >= this._extent.y) {
+            throw Error();
+        }
         return index.y * this._extent.x + index.x;
     }
 

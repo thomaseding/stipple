@@ -65,6 +65,7 @@ interface BuildPatchInfo {
 
 function buildPatch(info: BuildPatchInfo): Patch {
     const abGridDotBounds = new Box2d(info.abGridDotOffset.toPoint(), info.abGrid.extent());
+    //const abGridDotBounds = new Box2d(Point2d.origin, info.abGrid.extent());
     const patchGrid = Grid2d.fill<A | B>(Patch.extent, A);
     const infoDotOffset = info.patchOffset.multiply(Patch.extent);
     for (const localDotOffset of Patch.localOffsets) {
@@ -72,7 +73,8 @@ function buildPatch(info: BuildPatchInfo): Patch {
         const dotOffset = patchDotOffset.subtract(info.abGridDotOffset);
         //const dotOffset = info.abGridDotOffset.subtract(patchDotOffset);
         let ab: A | B = A;
-        if (abGridDotBounds.containsPoint(dotOffset.toPoint())) {
+        //if (abGridDotBounds.containsPoint(dotOffset.toPoint())) {
+        if (abGridDotBounds.containsPoint(patchDotOffset.toPoint())) {
             ab = info.abGrid.getAt(dotOffset);
         }
         patchGrid.setAt(localDotOffset, ab);
@@ -91,8 +93,8 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
     //const abGridDotOffset = Vector2d.square(6);
     const quiltExtent = info.abGrid.extent().add(dotPadding).zipWith(Patch.extent, roundUpToMultipleOf).divide(Patch.extent);
     const quiltGrid = Grid2d.fill<Patch>(quiltExtent, Patch.black);
-    for (let x = 0; x < quiltExtent.x; ++x) {
-        for (let y = 0; y < quiltExtent.y; ++y) {
+    for (let y = 0; y < quiltExtent.y; ++y) {
+        for (let x = 0; x < quiltExtent.x; ++x) {
             const patchInfo: BuildPatchInfo = {
                 abGridDotOffset: abGridDotOffset,
                 abGrid: info.abGrid,
