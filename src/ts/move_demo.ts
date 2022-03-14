@@ -65,8 +65,9 @@ interface BuildPatchInfo {
 
 function buildPatch(info: BuildPatchInfo): Patch {
     const patchGrid = Grid2d.fill<A | B>(Patch.extent, A);
+    const infoDotOffset = info.patchOffset.multiply(Patch.extent);
     for (const localOffset of Patch.localOffsets) {
-        const patchDotOffset = info.patchOffset.add(localOffset).multiply(Patch.extent);
+        const patchDotOffset = infoDotOffset.add(localOffset);
         const dotOffset = patchDotOffset.subtract(info.abGridDotOffset);
         const ab = info.abGrid.tryGetAt(dotOffset) || A;
         patchGrid.setAt(localOffset, ab);
@@ -89,7 +90,9 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
                 colorB: info.colorB,
                 patchOffset: new Vector2d(x, y),
             };
+            console.log(patchInfo);
             const patch = buildPatch(patchInfo);
+            console.log(patch);
             quiltGrid.setAt(patchInfo.patchOffset, patch);
         }
     }

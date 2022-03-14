@@ -38,8 +38,7 @@ namespace Stipple {
         return new Patch(colorA, colorB, pattern);
     }
 
-    //const defaultTileExtent = Vector2d.square(24);
-    const defaultTileExtent = Vector2d.square(1);
+    const defaultTileExtent = Vector2d.square(24);
 
     function generateRandomQuilt(palette: ColorPalette): Quilt {
         const patches = Grid2d.build(defaultTileExtent, () => {
@@ -90,14 +89,20 @@ namespace Stipple {
         const buildInfo: BuildQuiltInfo = {
             abGrid: generateShapeCached(),
             abGridDotOffset: shapeDotOffset,
-            colorA: new IndexedColor(palette, 0),
-            colorB: new IndexedColor(palette, 1),
+            //colorA: new IndexedColor(palette, 0),
+            //colorB: new IndexedColor(palette, 1),
+            colorA: Color.black,
+            colorB: Color.yellow,
         };
         const shapePixelOffset = shapeDotOffset.scale(drawScale);
         const shape = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
-        node.setLocalTransform(Transform2d.scaleBy(Vector2d.square(drawScale)).then(Transform2d.translateBy(shapePixelOffset)));
+        const xform = Transform2d.sequence([
+            Transform2d.scaleBy(Vector2d.square(drawScale)),
+            Transform2d.translateBy(shapePixelOffset),
+        ]);
+        node.setLocalTransform(xform);
         return node;
     }
 
@@ -180,23 +185,12 @@ namespace Stipple {
             for (const canvas of [this._sceneCanvas]) {
                 const context = canvas.newRenderContext();
 
-                const xform = Transform2d.sequence([
-                    Transform2d.translateBy(new Vector2d(1, 4)),
-                    Transform2d.scaleBy(Vector2d.square(3)),
-                ]);
-
-                const patch1 = new Patch(Color.yellow, Color.black, Dither.Bayer.patternFromRatio(0.5));
-                const patch2 = new Patch(Color.blue, Color.white, Dither.Bayer.patternFromRatio(0.5));
-                const patchGrid = Grid2d.from2d([[patch1, patch2]]);
-                const quilt = new Quilt(patchGrid);
-                quilt.renderTo(context, xform);
-
                 if (redrawAll) {
-                    //ls.background.renderTo(context, Transform2d.identity);
+                    ls.background.renderTo(context, Transform2d.identity);
                     //if (canvas === this._ditheredCanvas) {
                     //ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
                     //}
-                    //ls.shape.renderTo(context, Transform2d.identity);
+                    ls.shape.renderTo(context, Transform2d.identity);
                 }
                 else {
                     throw Error("todo");
@@ -233,11 +227,11 @@ namespace Stipple {
             });
 
             this.render(true);
-            setInterval(() => {
-                this._layers = generateLayers(this._palette, logicalPixelOffset);
-                logicalPixelOffset = new Vector2d(x, y);
-                this.render(false);
-            }, 100);
+            // setInterval(() => {
+            //     this._layers = generateLayers(this._palette, logicalPixelOffset);
+            //     logicalPixelOffset = new Vector2d(x, y);
+            //     this.render(false);
+            // }, 100);
         }
 
         private readonly _palette: ColorPalette = defaultPalette;
