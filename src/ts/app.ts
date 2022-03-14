@@ -67,7 +67,7 @@ namespace Stipple {
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
             //_cachedShape = generateCircle(8 * 10, B);
-            _cachedShape = generateSquare(8 * 1, B);
+            _cachedShape = generateSquare(2, B);
         }
         return _cachedShape;
     }
@@ -95,6 +95,7 @@ namespace Stipple {
             colorB: Color.yellow,
         };
         const shapePixelOffset = shapeDotOffset.scale(drawScale);
+        console.log(shapePixelOffset);
         const shape = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
@@ -106,9 +107,9 @@ namespace Stipple {
         return node;
     }
 
-    function generateLayers(palette: ColorPalette, shapePixelOffset = Vector2d.zero): Layers {
+    function generateLayers(palette: ColorPalette, shapePixelOffset: Vector2d): Layers {
         const startTime = performance.now();
-        const shapeDotOffset = shapePixelOffset.divide(Patch.extent).map(Math.floor);
+        const shapeDotOffset = shapePixelOffset.scale(1 / drawScale).map(Math.floor);
         const layers: Layers = {
             background: generateBackgroundLayer(palette),
             shape: generateShapeLayer(palette, shapeDotOffset),
@@ -235,8 +236,7 @@ namespace Stipple {
         }
 
         private readonly _palette: ColorPalette = defaultPalette;
-        private _prevLayers: Layers = generateLayers(this._palette);
-        private _layers: Layers = this._prevLayers;
+        private _layers: Layers = generateLayers(this._palette, Vector2d.square(0));
         private readonly _sceneCanvas: SceneCanvas;
         private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

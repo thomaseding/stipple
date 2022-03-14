@@ -151,8 +151,8 @@ class Box2d {
     }
 
     public forEachPosition(action: (position: Point2d) => void): void {
-        for (let x = 0; x < this._extent.x; ++x) {
-            for (let y = 0; y < this._extent.y; ++y) {
+        for (let y = 0; y < this._extent.y; ++y) {
+            for (let x = 0; x < this._extent.x; ++x) {
                 action(this._min.add(new Vector2d(x, y)));
             }
         }
@@ -218,13 +218,9 @@ class ReadonlyGrid2d<T> {
         return this._extent;
     }
 
-    public tryGetAt(index: Point2d | Vector2d): T | undefined {
-        const linear = this._linearize(index);
-        return this._linearGrid[linear];
-    }
-
     public getAt(index: Point2d | Vector2d): T {
-        const value = this.tryGetAt(index);
+        const linear = this._linearize(index);
+        const value = this._linearGrid[linear];
         if (value === undefined) {
             throw Error();
         }
@@ -232,6 +228,8 @@ class ReadonlyGrid2d<T> {
     }
 
     protected _linearize(index: Point2d | Vector2d): number {
+        console.assert(index.x < this._extent.x);
+        console.assert(index.y < this._extent.y);
         return index.y * this._extent.x + index.x;
     }
 

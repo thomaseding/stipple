@@ -60,39 +60,49 @@ interface BuildPatchInfo {
     readonly abGrid: Grid2d<A | B>;
     readonly colorA: Color;
     readonly colorB: Color;
-    patchOffset: Vector2d;
+    readonly patchOffset: Vector2d;
 }
 
 function buildPatch(info: BuildPatchInfo): Patch {
+    const abGridDotBounds = new Box2d(info.abGridDotOffset.toPoint(), info.abGrid.extent());
     const patchGrid = Grid2d.fill<A | B>(Patch.extent, A);
     const infoDotOffset = info.patchOffset.multiply(Patch.extent);
-    for (const localOffset of Patch.localOffsets) {
-        const patchDotOffset = infoDotOffset.add(localOffset);
+    for (const localDotOffset of Patch.localOffsets) {
+        const patchDotOffset = infoDotOffset.add(localDotOffset);
         const dotOffset = patchDotOffset.subtract(info.abGridDotOffset);
-        const ab = info.abGrid.tryGetAt(dotOffset) || A;
-        patchGrid.setAt(localOffset, ab);
+        //const dotOffset = info.abGridDotOffset.subtract(patchDotOffset);
+        let ab: A | B = A;
+        if (abGridDotBounds.containsPoint(dotOffset.toPoint())) {
+            ab = info.abGrid.getAt(dotOffset);
+        }
+        patchGrid.setAt(localDotOffset, ab);
     }
     const pattern = new PatchPattern(patchGrid);
     return new Patch(info.colorA, info.colorB, pattern);
 }
 
 function buildQuilt(info: BuildQuiltInfo): Quilt {
+    console.log("quiltBuildInfo", info);
     const dotPaddingProto = info.abGridDotOffset.mod(Patch.extent);
+    console.log("dotPaddingProto", dotPaddingProto);
     const dotPadding = dotPaddingProto.equals(Vector2d.zero) ? Vector2d.zero : Patch.extent.subtract(dotPaddingProto);
+    console.log("dotPadding", dotPadding);
+    const abGridDotOffset = info.abGridDotOffset.subtract(dotPadding);
+    //const abGridDotOffset = Vector2d.square(6);
     const quiltExtent = info.abGrid.extent().add(dotPadding).zipWith(Patch.extent, roundUpToMultipleOf).divide(Patch.extent);
     const quiltGrid = Grid2d.fill<Patch>(quiltExtent, Patch.black);
     for (let x = 0; x < quiltExtent.x; ++x) {
         for (let y = 0; y < quiltExtent.y; ++y) {
             const patchInfo: BuildPatchInfo = {
-                abGridDotOffset: info.abGridDotOffset.subtract(dotPadding),
+                abGridDotOffset: abGridDotOffset,
                 abGrid: info.abGrid,
                 colorA: info.colorA,
                 colorB: info.colorB,
                 patchOffset: new Vector2d(x, y),
             };
-            console.log(patchInfo);
+            console.log("patchInfo", patchInfo);
             const patch = buildPatch(patchInfo);
-            console.log(patch);
+            //console.log("patch", patch);
             quiltGrid.setAt(patchInfo.patchOffset, patch);
         }
     }
