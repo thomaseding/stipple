@@ -304,7 +304,9 @@ class Transform2d {
     }
 
     public then(next: Transform2d): Transform2d {
-        return new Transform2d(this._translation.add(next._translation), this._scale.multiply(next._scale));
+        return new Transform2d(
+            this._translation.multiply(next._scale).add(next._translation),
+            this._scale.multiply(next._scale));
     }
 
     public applyToPoint(p: Point2d): Point2d {

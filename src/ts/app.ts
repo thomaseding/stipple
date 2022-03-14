@@ -38,7 +38,8 @@ namespace Stipple {
         return new Patch(colorA, colorB, pattern);
     }
 
-    const defaultTileExtent = Vector2d.square(24);
+    //const defaultTileExtent = Vector2d.square(24);
+    const defaultTileExtent = Vector2d.square(1);
 
     function generateRandomQuilt(palette: ColorPalette): Quilt {
         const patches = Grid2d.build(defaultTileExtent, () => {
@@ -66,7 +67,8 @@ namespace Stipple {
     let _cachedShape: Grid2d<A | B> | null = null;
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
-            _cachedShape = generateCircle(8 * 10, B);
+            //_cachedShape = generateCircle(8 * 10, B);
+            _cachedShape = generateSquare(8 * 1, B);
         }
         return _cachedShape;
     }
@@ -174,14 +176,19 @@ namespace Stipple {
             redrawAll = true; // TODO
             const startTime = performance.now();
             const ls = this._layers;
-            for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
+            //for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
+            for (const canvas of [this._sceneCanvas]) {
                 const context = canvas.newRenderContext();
+
+                const dot = new Dot(Color.yellow);
+                dot.renderTo(context, Transform2d.scaleBy(Vector2d.square(3)));
+
                 if (redrawAll) {
-                    ls.background.renderTo(context, Transform2d.identity, 0);
-                    if (canvas === this._ditheredCanvas) {
-                        ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
-                    }
-                    ls.shape.renderTo(context, Transform2d.identity, 0);
+                    ls.background.renderTo(context, Transform2d.identity);
+                    //if (canvas === this._ditheredCanvas) {
+                    //ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
+                    //}
+                    //ls.shape.renderTo(context, Transform2d.identity);
                 }
                 else {
                     throw Error("todo");
