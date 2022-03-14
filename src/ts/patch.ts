@@ -47,7 +47,7 @@ class Patch implements SceneObject {
 }
 
 class Quilt implements SceneObject {
-    public constructor(grid: Grid2d<Patch>) {
+    public constructor(grid: ReadonlyGrid2d<Patch>) {
         this._patchGrid = grid;
     }
 
@@ -67,5 +67,5 @@ class Quilt implements SceneObject {
         return this._patchGrid;
     }
 
-    private readonly _patchGrid: Grid2d<Patch>;
+    private readonly _patchGrid: ReadonlyGrid2d<Patch>;
 }

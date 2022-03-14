@@ -218,10 +218,14 @@ namespace Stipple {
             });
             this.render(true);
 
+            const shape = generateShapeCached();
+            const k = drawScale * 0.5;
+            const left = rect.left + k * shape.extent().x;
+            const top = rect.top + k * shape.extent().y;
             this._sceneCanvas.canvas().addEventListener("mousemove", (e: MouseEvent) => {
                 pixelOffset = new Vector2d(
-                    clamp(0, rect.width, e.clientX - rect.left),
-                    clamp(0, rect.height, e.clientY - rect.top))
+                    clamp(0, rect.width, e.clientX - left),
+                    clamp(0, rect.height, e.clientY - top))
                     .map(Math.floor);
             });
 
