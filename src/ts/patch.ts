@@ -33,10 +33,10 @@ class Patch implements SceneObject {
     }
 
     public renderTo(context: RenderContext, transform: Transform2d): void {
-        for (const localOffset of Patch.localOffsets) {
-            const color = this.colorAt(localOffset);
+        for (const dotOffset of Patch.localOffsets) {
+            const color = this.colorAt(dotOffset);
             const dot = new Dot(color);
-            const dotTransform = Transform2d.translateBy(localOffset).then(transform);
+            const dotTransform = Transform2d.translateBy(dotOffset).then(transform);
             dot.renderTo(context, dotTransform);
         }
     }
@@ -48,24 +48,24 @@ class Patch implements SceneObject {
 
 class Quilt implements SceneObject {
     public constructor(grid: Grid2d<Patch>) {
-        this._grid = grid;
+        this._patchGrid = grid;
     }
 
     public renderTo(context: RenderContext, transform: Transform2d): void {
-        const extent = this._grid.extent();
-        for (let x = 0; x < extent.x; ++x) {
-            for (let y = 0; y < extent.y; ++y) {
-                const localOffset = new Vector2d(x, y);
-                const patch = this._grid.getAt(localOffset);
-                const patchTransform = Transform2d.translateBy(localOffset).then(transform);
+        const patchExtent = this._patchGrid.extent();
+        for (let x = 0; x < patchExtent.x; ++x) {
+            for (let y = 0; y < patchExtent.y; ++y) {
+                const patchOffset = new Vector2d(x, y);
+                const patch = this._patchGrid.getAt(patchOffset);
+                const patchTransform = Transform2d.translateBy(patchOffset.multiply(Patch.extent)).then(transform);
                 patch.renderTo(context, patchTransform);
             }
         }
     }
 
     public patchGrid(): ReadonlyGrid2d<Patch> {
-        return this._grid;
+        return this._patchGrid;
     }
 
-    private readonly _grid: Grid2d<Patch>;
+    private readonly _patchGrid: Grid2d<Patch>;
 }

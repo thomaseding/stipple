@@ -180,11 +180,19 @@ namespace Stipple {
             for (const canvas of [this._sceneCanvas]) {
                 const context = canvas.newRenderContext();
 
-                const dot = new Dot(Color.yellow);
-                dot.renderTo(context, Transform2d.scaleBy(Vector2d.square(3)));
+                const xform = Transform2d.sequence([
+                    Transform2d.translateBy(new Vector2d(1, 4)),
+                    Transform2d.scaleBy(Vector2d.square(3)),
+                ]);
+
+                const patch1 = new Patch(Color.yellow, Color.black, Dither.Bayer.patternFromRatio(0.5));
+                const patch2 = new Patch(Color.blue, Color.white, Dither.Bayer.patternFromRatio(0.5));
+                const patchGrid = Grid2d.from2d([[patch1, patch2]]);
+                const quilt = new Quilt(patchGrid);
+                quilt.renderTo(context, xform);
 
                 if (redrawAll) {
-                    ls.background.renderTo(context, Transform2d.identity);
+                    //ls.background.renderTo(context, Transform2d.identity);
                     //if (canvas === this._ditheredCanvas) {
                     //ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
                     //}

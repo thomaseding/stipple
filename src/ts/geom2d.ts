@@ -303,6 +303,14 @@ class Transform2d {
         return new Transform2d(Vector2d.zero, scale);
     }
 
+    public static sequence(transforms: Transform2d[]): Transform2d {
+        let total = Transform2d.identity;
+        for (const transform of transforms) {
+            total = total.then(transform);
+        }
+        return total;
+    }
+
     public then(next: Transform2d): Transform2d {
         return new Transform2d(
             this._translation.multiply(next._scale).add(next._translation),
