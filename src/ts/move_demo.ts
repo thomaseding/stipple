@@ -49,34 +49,23 @@ function roundUpToMultipleOf(value: number, k: number): number {
 }
 
 interface BuildQuiltInfo {
-    readonly abGridDotOffset: Vector2d;
-    readonly abGrid: Grid2d<A | B>;
+    readonly abGrid: OffsetGrid2d<A | B>;
     readonly colorA: Color;
     readonly colorB: Color;
 }
 
 interface BuildPatchInfo {
-    readonly abGridDotOffset: Vector2d;
-    readonly abGrid: Grid2d<A | B>;
+    readonly abGrid: OffsetGrid2d<A | B>;
     readonly colorA: Color;
     readonly colorB: Color;
-    readonly patchOffset: Vector2d;
+    readonly patchOffsetWithinQuilt: Vector2d;
 }
 
 function buildPatch(info: BuildPatchInfo): Patch {
-    const abGridDotBounds = new Box2d(info.abGridDotOffset.toPoint(), info.abGrid.extent());
-    //const abGridDotBounds = new Box2d(Point2d.origin, info.abGrid.extent());
+    const patchMinDotOffset = info.patchOffsetWithinQuilt.multiply(Patch.extent);
     const patchGrid = Grid2d.fill<A | B>(Patch.extent, A);
-    const infoDotOffset = info.patchOffset.multiply(Patch.extent);
     for (const localDotOffset of Patch.localOffsets) {
-        const patchDotOffset = infoDotOffset.add(localDotOffset);
-        const dotOffset = patchDotOffset.subtract(info.abGridDotOffset);
-        //const dotOffset = info.abGridDotOffset.subtract(patchDotOffset);
-        let ab: A | B = A;
-        //if (abGridDotBounds.containsPoint(dotOffset.toPoint())) {
-        if (abGridDotBounds.containsPoint(patchDotOffset.toPoint())) {
-            ab = info.abGrid.getAt(dotOffset);
-        }
+        const ab = info.abGrid.getAt(patchMinDotOffset.add(localDotOffset)) || A;
         patchGrid.setAt(localDotOffset, ab);
     }
     const pattern = new PatchPattern(patchGrid);
@@ -84,32 +73,27 @@ function buildPatch(info: BuildPatchInfo): Patch {
 }
 
 function buildQuilt(info: BuildQuiltInfo): [Quilt, Vector2d] {
-    //console.log("quiltBuildInfo", info);
-    const dotPaddingProto = info.abGridDotOffset.mod(Patch.extent);
-    //console.log("dotPaddingProto", dotPaddingProto);
-    const dotPadding = dotPaddingProto.equals(Vector2d.zero) ? Vector2d.zero : Patch.extent.subtract(dotPaddingProto);
-    //console.log("dotPadding", dotPadding);
-    const abGridDotOffset = info.abGridDotOffset;//.subtract(dotPadding);
-    //const abGridDotOffset = Vector2d.square(6);
-    const quiltExtent = info.abGrid.extent().add(dotPadding).zipWith(Patch.extent, roundUpToMultipleOf).divide(Patch.extent);
+    const modPatchExtent = info.abGrid.box().min().toVector().mod(Patch.extent);
+    const abGrid = info.abGrid.applyAdditionalOffset(modPatchExtent);
+    const quiltExtent = info.abGrid.box().extent().divide(Patch.extent).map(Math.ceil);
     const quiltGrid = Grid2d.fill<Patch>(quiltExtent, Patch.black);
     for (let y = 0; y < quiltExtent.y; ++y) {
         for (let x = 0; x < quiltExtent.x; ++x) {
+            const patchOffset = new Vector2d(x, y);
             const patchInfo: BuildPatchInfo = {
-                abGridDotOffset: abGridDotOffset,
-                abGrid: info.abGrid,
+                abGrid: abGrid,
                 colorA: info.colorA,
                 colorB: info.colorB,
-                patchOffset: new Vector2d(x, y),
+                patchOffsetWithinQuilt: patchOffset,
             };
             //console.log("patchInfo", patchInfo);
             const patch = buildPatch(patchInfo);
             //console.log("patch", patch);
-            quiltGrid.setAt(patchInfo.patchOffset, patch);
+            quiltGrid.setAt(patchOffset, patch);
         }
     }
     const quilt = new Quilt(quiltGrid);
-    return [quilt, dotPaddingProto];
+    return [quilt, modPatchExtent];
 }
 
 function bayerizePatchGrid(grid: ReadonlyGrid2d<Patch>): Grid2d<Patch> {

@@ -85,16 +85,20 @@ namespace Stipple {
         return node;
     }
 
-    function generateShapeLayer(palette: ColorPalette, shapeDotOffset: Vector2d): SceneNode<Quilt> {
+    interface ShapeOffset {
+        pixel: Vector2d,
+        dot: Vector2d,
+    }
+
+    function generateShapeLayer(palette: ColorPalette, shapeOffset: ShapeOffset): SceneNode<Quilt> {
+        const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot);
         const buildInfo: BuildQuiltInfo = {
-            abGrid: generateShapeCached(),
-            abGridDotOffset: shapeDotOffset,
+            abGrid: abGrid,
             //colorA: new IndexedColor(palette, 0),
             //colorB: new IndexedColor(palette, 1),
             colorA: Color.black,
             colorB: Color.yellow,
         };
-        const shapePixelOffset = shapeDotOffset.scale(drawScale);
         //console.log(shapePixelOffset);
         const [shape, delta] = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
@@ -102,18 +106,17 @@ namespace Stipple {
         const xform = Transform2d.sequence([
             Transform2d.translateBy(delta.negate()),
             Transform2d.scaleBy(Vector2d.square(drawScale)),
-            Transform2d.translateBy(shapePixelOffset),
+            Transform2d.translateBy(shapeOffset.dot),
         ]);
         node.setLocalTransform(xform);
         return node;
     }
 
-    function generateLayers(palette: ColorPalette, shapePixelOffset: Vector2d): Layers {
+    function generateLayers(palette: ColorPalette, shapeOffset: ShapeOffset): Layers {
         const startTime = performance.now();
-        const shapeDotOffset = shapePixelOffset.scale(1 / drawScale).map(Math.floor);
         const layers: Layers = {
             background: generateBackgroundLayer(palette),
-            shape: generateShapeLayer(palette, shapeDotOffset),
+            shape: generateShapeLayer(palette, shapeOffset),
         };
         const endTime = performance.now();
         //console.log("generateLayers", endTime - startTime);
@@ -205,39 +208,36 @@ namespace Stipple {
         }
 
         public doSomething(): void {
-            let defaultLogicalPixelOffset = new Vector2d(2 * Patch.extent.x, 3 * Patch.extent.y);
-            let logicalPixelOffset = defaultLogicalPixelOffset;
+            let defaultDotOffset = new Vector2d(0, 0).multiply(Patch.extent);
+            let dotOffset = defaultDotOffset;
 
-            const choices = [-1, 0, 1];
-            const pixelMax = defaultTileExtent.multiply(Patch.extent);
             const rect = this._sceneCanvas.canvas().getBoundingClientRect();
-            const k = 0.5 * drawScale;
-            const left = rect.left + k * _cachedShape!.extent().x;
-            const top = rect.top + k * _cachedShape!.extent().y;
             const invDrawScale = 1 / drawScale;
 
-            let x: number = 0;
-            let y: number = 0;
+            let pixelOffset = Vector2d.zero;
             this._sceneCanvas.canvas().addEventListener("mousemove", (e: MouseEvent) => {
-                let offset = new Vector2d(e.clientX - left, e.clientY - top);
-                offset = offset.scale(invDrawScale);
-                offset = offset.map(Math.floor);
-                x = offset.x;
-                y = offset.y;
-                x = clamp(0, pixelMax.x, x);
-                y = clamp(0, pixelMax.y, y);
+                pixelOffset = new Vector2d(
+                    clamp(0, rect.width, e.clientX - rect.left),
+                    clamp(0, rect.height, e.clientY - rect.top))
+                    .map(Math.floor);
+                dotOffset = pixelOffset.scale(invDrawScale);
+                dotOffset = dotOffset.map(Math.floor);
+                console.log(pixelOffset, dotOffset);
             });
 
             this.render(true);
             setInterval(() => {
-                this._layers = generateLayers(this._palette, logicalPixelOffset);
-                logicalPixelOffset = new Vector2d(x, y);
+                const shapeOffset: ShapeOffset = {
+                    pixel: pixelOffset,
+                    dot: dotOffset,
+                };
+                this._layers = generateLayers(this._palette, shapeOffset);
                 this.render(false);
             }, 100);
         }
 
         private readonly _palette: ColorPalette = defaultPalette;
-        private _layers: Layers = generateLayers(this._palette, new Vector2d(3 * 1, 0));
+        private _layers: Layers = generateLayers(this._palette, { pixel: Vector2d.zero, dot: Vector2d.zero });
         private readonly _sceneCanvas: SceneCanvas;
         private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

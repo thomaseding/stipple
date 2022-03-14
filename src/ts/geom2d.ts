@@ -25,6 +25,10 @@ class Point2d extends CoordImpl<Point2d> {
 
     public static readonly origin = new Point2d(0, 0);
 
+    public toPoint(): Point2d {
+        return this;
+    }
+
     public toVector(): Vector2d {
         return new Vector2d(this.x, this.y);
     }
@@ -283,6 +287,33 @@ class Grid2d<T> extends ReadonlyGrid2d<T> {
         }
         this._linearGrid[linear] = value;
     }
+}
+
+class OffsetGrid2d<T> {
+    public constructor(grid: Grid2d<T>, offset: Vector2d) {
+        this._grid = grid;
+        this._box = new Box2d(offset.toPoint(), grid.extent());
+    }
+
+    public applyAdditionalOffset(offset: Vector2d): OffsetGrid2d<T> {
+        const newOffset = this._box.min().add(offset).toVector();
+        return new OffsetGrid2d(this._grid, newOffset);
+    }
+
+    public getAt(index: Point2d | Vector2d): T | undefined {
+        if (this._box.containsPoint(index.toPoint())) {
+            const i = index.subtract(this._box.min().toVector());
+            return this._grid.getAt(i);
+        }
+        return undefined;
+    }
+
+    public box(): Box2d {
+        return this._box;
+    }
+
+    private readonly _grid: Grid2d<T>;
+    private readonly _box: Box2d;
 }
 
 class Transform2d {
