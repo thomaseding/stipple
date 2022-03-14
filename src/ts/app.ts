@@ -105,6 +105,7 @@ namespace Stipple {
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
         const xform = Transform2d.sequence([
+            Transform2d.translateBy(shapeOffset.dot.divide(Patch.extent).map(Math.floor).multiply(Patch.extent)),
             Transform2d.scaleBy(Vector2d.square(drawScale)),
         ]);
         node.setLocalTransform(xform);
