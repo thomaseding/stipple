@@ -91,8 +91,8 @@ namespace Stipple {
     }
 
     function generateShapeLayer(palette: ColorPalette, shapeOffset: ShapeOffset): SceneNode<Quilt> {
-        console.log(shapeOffset);
-        const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot);
+        //console.log(shapeOffset);
+        const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot.mod(Patch.extent));
         const buildInfo: BuildQuiltInfo = {
             abGrid: abGrid,
             //colorA: new IndexedColor(palette, 0),
