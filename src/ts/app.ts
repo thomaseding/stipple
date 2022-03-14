@@ -67,7 +67,7 @@ namespace Stipple {
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
             //_cachedShape = generateCircle(8 * 10, B);
-            _cachedShape = generateTriangle(8 * 1, B);
+            _cachedShape = generateTriangle(8 * 3, B);
         }
         return _cachedShape;
     }
@@ -95,10 +95,8 @@ namespace Stipple {
         const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot.mod(Patch.extent));
         const buildInfo: BuildQuiltInfo = {
             abGrid: abGrid,
-            //colorA: new IndexedColor(palette, 0),
-            //colorB: new IndexedColor(palette, 1),
-            colorA: Color.black,
-            colorB: Color.yellow,
+            colorA: new IndexedColor(palette, 0),
+            colorB: new IndexedColor(palette, 1),
         };
         //console.log(shapePixelOffset);
         const shape = buildQuilt(buildInfo);
