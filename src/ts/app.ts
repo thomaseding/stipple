@@ -91,17 +91,23 @@ namespace Stipple {
     }
 
     function generateShapeLayer(palette: ColorPalette, shapeOffset: ShapeOffset): SceneNode<Quilt> {
+        const bg = new OffsetGrid2d(generateBackgroundQuiltCached(palette).patchGrid(), Vector2d.zero);
+        const shapeMinPatchOffset = shapeOffset.dot.divide(Patch.extent).map(Math.floor);
         const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot.mod(Patch.extent));
         const buildInfo: BuildQuiltInfo = {
             abGrid: abGrid,
             colorA: new IndexedColor(palette, 0),
             colorB: new IndexedColor(palette, 1),
+            alphaPatch: function (patchOffsetWithinQuilt: Vector2d): Patch | undefined {
+                const index = shapeMinPatchOffset.add(patchOffsetWithinQuilt);
+                return bg.getAt(index);
+            }
         };
         const shape = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
         const xform = Transform2d.sequence([
-            Transform2d.translateBy(shapeOffset.dot.divide(Patch.extent).map(Math.floor).multiply(Patch.extent)),
+            Transform2d.translateBy(shapeMinPatchOffset.multiply(Patch.extent)),
             Transform2d.scaleBy(Vector2d.square(drawScale)),
         ]);
         node.setLocalTransform(xform);

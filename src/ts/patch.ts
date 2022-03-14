@@ -12,8 +12,8 @@ class Patch implements SceneObject {
             pattern = Dither.Bayer.patternFromDensity(Dither.Bayer.Density64._0);
         }
         this._pattern = pattern;
-        this._colorA = colorA;
-        this._colorB = colorB;
+        this.colorA = colorA;
+        this.colorB = colorB;
     }
 
     public static readonly black: Patch = new Patch(Color.black, Color.black);
@@ -23,12 +23,12 @@ class Patch implements SceneObject {
     }
 
     public updatePattern(pattern: PatchPattern): Patch {
-        return new Patch(this._colorA, this._colorB, pattern);
+        return new Patch(this.colorA, this.colorB, pattern);
     }
 
     public colorAt(index: Point2d | Vector2d): Color {
         const ab = this._pattern.at(index);
-        const color = ab === A ? this._colorA : this._colorB;
+        const color = ab === A ? this.colorA : this.colorB;
         return color;
     }
 
@@ -42,8 +42,8 @@ class Patch implements SceneObject {
     }
 
     private _pattern: PatchPattern;
-    private _colorA: Color;
-    private _colorB: Color;
+    public readonly colorA: Color;
+    public readonly colorB: Color;
 }
 
 class Quilt implements SceneObject {

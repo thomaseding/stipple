@@ -290,7 +290,7 @@ class Grid2d<T> extends ReadonlyGrid2d<T> {
 }
 
 class OffsetGrid2d<T> {
-    public constructor(grid: Grid2d<T>, offset: Vector2d) {
+    public constructor(grid: ReadonlyGrid2d<T>, offset: Vector2d) {
         this._grid = grid;
         this._box = new Box2d(offset.toPoint(), grid.extent());
     }
@@ -312,7 +312,7 @@ class OffsetGrid2d<T> {
         return this._box;
     }
 
-    private readonly _grid: Grid2d<T>;
+    private readonly _grid: ReadonlyGrid2d<T>;
     private readonly _box: Box2d;
 }
 
