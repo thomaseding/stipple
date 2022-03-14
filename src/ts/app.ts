@@ -91,14 +91,12 @@ namespace Stipple {
     }
 
     function generateShapeLayer(palette: ColorPalette, shapeOffset: ShapeOffset): SceneNode<Quilt> {
-        //console.log(shapeOffset);
         const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot.mod(Patch.extent));
         const buildInfo: BuildQuiltInfo = {
             abGrid: abGrid,
             colorA: new IndexedColor(palette, 0),
             colorB: new IndexedColor(palette, 1),
         };
-        //console.log(shapePixelOffset);
         const shape = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
@@ -111,13 +109,10 @@ namespace Stipple {
     }
 
     function generateLayers(palette: ColorPalette, shapeOffset: ShapeOffset): Layers {
-        const startTime = performance.now();
         const layers: Layers = {
             background: generateBackgroundLayer(palette),
             shape: generateShapeLayer(palette, shapeOffset),
         };
-        const endTime = performance.now();
-        console.log("generateLayers", endTime - startTime);
         return layers;
     }
 
@@ -186,17 +181,16 @@ namespace Stipple {
             const ls = this._layers;
             for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
                 const context = canvas.newRenderContext();
-
                 if (redrawAll) {
                     ls.background.renderTo(context, Transform2d.identity);
-                    if (canvas === this._ditheredCanvas) {
-                        ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
-                    }
-                    ls.shape.renderTo(context, Transform2d.identity);
                 }
                 else {
                     throw Error("todo");
                 }
+                if (canvas === this._ditheredCanvas) {
+                    ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
+                }
+                ls.shape.renderTo(context, Transform2d.identity);
                 canvas.commit(context);
             }
             this._paletteCanvas.render();
