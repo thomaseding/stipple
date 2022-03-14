@@ -67,7 +67,7 @@ namespace Stipple {
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
             //_cachedShape = generateCircle(8 * 10, B);
-            _cachedShape = generateTriangle(9, B);
+            _cachedShape = generateTriangle(40, B);
         }
         return _cachedShape;
     }
@@ -95,11 +95,12 @@ namespace Stipple {
             colorB: Color.yellow,
         };
         const shapePixelOffset = shapeDotOffset.scale(drawScale);
-        console.log(shapePixelOffset);
-        const shape = buildQuilt(buildInfo);
+        //console.log(shapePixelOffset);
+        const [shape, delta] = buildQuilt(buildInfo);
         const node = new SceneNode<Quilt>();
         node.objects.push(shape);
         const xform = Transform2d.sequence([
+            Transform2d.translateBy(delta.negate()),
             Transform2d.scaleBy(Vector2d.square(drawScale)),
             Transform2d.translateBy(shapePixelOffset),
         ]);
@@ -115,7 +116,7 @@ namespace Stipple {
             shape: generateShapeLayer(palette, shapeDotOffset),
         };
         const endTime = performance.now();
-        console.log("generateLayers", endTime - startTime);
+        //console.log("generateLayers", endTime - startTime);
         return layers;
     }
 
@@ -200,7 +201,7 @@ namespace Stipple {
             }
             this._paletteCanvas.render();
             const endTime = performance.now();
-            console.log("App.render", endTime - startTime);
+            //console.log("App.render", endTime - startTime);
         }
 
         public doSomething(): void {
@@ -228,15 +229,15 @@ namespace Stipple {
             });
 
             this.render(true);
-            // setInterval(() => {
-            //     this._layers = generateLayers(this._palette, logicalPixelOffset);
-            //     logicalPixelOffset = new Vector2d(x, y);
-            //     this.render(false);
-            // }, 100);
+            setInterval(() => {
+                this._layers = generateLayers(this._palette, logicalPixelOffset);
+                logicalPixelOffset = new Vector2d(x, y);
+                this.render(false);
+            }, 100);
         }
 
         private readonly _palette: ColorPalette = defaultPalette;
-        private _layers: Layers = generateLayers(this._palette, new Vector2d(3, 0));
+        private _layers: Layers = generateLayers(this._palette, new Vector2d(3 * 1, 0));
         private readonly _sceneCanvas: SceneCanvas;
         private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

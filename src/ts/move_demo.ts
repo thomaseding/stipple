@@ -83,13 +83,13 @@ function buildPatch(info: BuildPatchInfo): Patch {
     return new Patch(info.colorA, info.colorB, pattern);
 }
 
-function buildQuilt(info: BuildQuiltInfo): Quilt {
-    console.log("quiltBuildInfo", info);
+function buildQuilt(info: BuildQuiltInfo): [Quilt, Vector2d] {
+    //console.log("quiltBuildInfo", info);
     const dotPaddingProto = info.abGridDotOffset.mod(Patch.extent);
-    console.log("dotPaddingProto", dotPaddingProto);
+    //console.log("dotPaddingProto", dotPaddingProto);
     const dotPadding = dotPaddingProto.equals(Vector2d.zero) ? Vector2d.zero : Patch.extent.subtract(dotPaddingProto);
-    console.log("dotPadding", dotPadding);
-    const abGridDotOffset = info.abGridDotOffset.subtract(dotPadding);
+    //console.log("dotPadding", dotPadding);
+    const abGridDotOffset = info.abGridDotOffset;//.subtract(dotPadding);
     //const abGridDotOffset = Vector2d.square(6);
     const quiltExtent = info.abGrid.extent().add(dotPadding).zipWith(Patch.extent, roundUpToMultipleOf).divide(Patch.extent);
     const quiltGrid = Grid2d.fill<Patch>(quiltExtent, Patch.black);
@@ -102,13 +102,14 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
                 colorB: info.colorB,
                 patchOffset: new Vector2d(x, y),
             };
-            console.log("patchInfo", patchInfo);
+            //console.log("patchInfo", patchInfo);
             const patch = buildPatch(patchInfo);
             //console.log("patch", patch);
             quiltGrid.setAt(patchInfo.patchOffset, patch);
         }
     }
-    return new Quilt(quiltGrid);
+    const quilt = new Quilt(quiltGrid);
+    return [quilt, dotPaddingProto];
 }
 
 function bayerizePatchGrid(grid: ReadonlyGrid2d<Patch>): Grid2d<Patch> {
