@@ -73,10 +73,7 @@ function buildPatch(info: BuildPatchInfo): Patch {
 }
 
 function buildQuilt(info: BuildQuiltInfo): Quilt {
-    //console.log(info.abGrid.box().min());
-    const modPatchExtent = info.abGrid.box().min().toVector().mod(Patch.extent);
-    const abGrid = info.abGrid;//.applyAdditionalOffset(modPatchExtent);
-    let quiltExtent = info.abGrid.box().extent().divide(Patch.extent).map(Math.ceil);//.add(Vector2d.unit);
+    let quiltExtent = info.abGrid.box().extent().divide(Patch.extent).map(Math.ceil);
     const wideExtent = info.abGrid.box().min().add(info.abGrid.box().extent()).toVector().mod(Patch.extent);
     if (wideExtent.x > 0) {
         quiltExtent = new Vector2d(quiltExtent.x + 1, quiltExtent.y);
@@ -89,14 +86,12 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
         for (let x = 0; x < quiltExtent.x; ++x) {
             const patchOffset = new Vector2d(x, y);
             const patchInfo: BuildPatchInfo = {
-                abGrid: abGrid,
+                abGrid: info.abGrid,
                 colorA: info.colorA,
                 colorB: info.colorB,
                 patchOffsetWithinQuilt: patchOffset,
             };
-            //console.log("patchInfo", patchInfo);
             const patch = buildPatch(patchInfo);
-            //console.log("patch", patch);
             quiltGrid.setAt(patchOffset, patch);
         }
     }

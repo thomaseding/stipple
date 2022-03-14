@@ -66,8 +66,8 @@ namespace Stipple {
     let _cachedShape: Grid2d<A | B> | null = null;
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
-            //_cachedShape = generateCircle(8 * 10, B);
-            _cachedShape = generateTriangle(8 * 3, B);
+            _cachedShape = generateCircle(8 * 10, B);
+            //_cachedShape = generateTriangle(8 * 3, B);
         }
         return _cachedShape;
     }
@@ -117,7 +117,7 @@ namespace Stipple {
             shape: generateShapeLayer(palette, shapeOffset),
         };
         const endTime = performance.now();
-        //console.log("generateLayers", endTime - startTime);
+        console.log("generateLayers", endTime - startTime);
         return layers;
     }
 
@@ -184,15 +184,14 @@ namespace Stipple {
             redrawAll = true; // TODO
             const startTime = performance.now();
             const ls = this._layers;
-            //for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
-            for (const canvas of [this._sceneCanvas]) {
+            for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
                 const context = canvas.newRenderContext();
 
                 if (redrawAll) {
                     ls.background.renderTo(context, Transform2d.identity);
-                    //if (canvas === this._ditheredCanvas) {
-                    //ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
-                    //}
+                    if (canvas === this._ditheredCanvas) {
+                        ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
+                    }
                     ls.shape.renderTo(context, Transform2d.identity);
                 }
                 else {
@@ -202,7 +201,7 @@ namespace Stipple {
             }
             this._paletteCanvas.render();
             const endTime = performance.now();
-            //console.log("App.render", endTime - startTime);
+            console.log("App.render", endTime - startTime);
         }
 
         public doSomething(): void {
