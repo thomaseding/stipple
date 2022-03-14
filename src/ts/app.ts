@@ -67,7 +67,7 @@ namespace Stipple {
     function generateShapeCached(): Grid2d<A | B> {
         if (_cachedShape === null) {
             //_cachedShape = generateCircle(8 * 10, B);
-            _cachedShape = generateTriangle(40, B);
+            _cachedShape = generateTriangle(8 * 1, B);
         }
         return _cachedShape;
     }
@@ -91,6 +91,7 @@ namespace Stipple {
     }
 
     function generateShapeLayer(palette: ColorPalette, shapeOffset: ShapeOffset): SceneNode<Quilt> {
+        console.log(shapeOffset);
         const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot);
         const buildInfo: BuildQuiltInfo = {
             abGrid: abGrid,
@@ -206,36 +207,37 @@ namespace Stipple {
         }
 
         public doSomething(): void {
-            let defaultDotOffset = new Vector2d(0, 0).multiply(Patch.extent);
-            let dotOffset = defaultDotOffset;
-
             const rect = this._sceneCanvas.canvas().getBoundingClientRect();
             const invDrawScale = 1 / drawScale;
+            let pixelOffset = new Vector2d(1, 0).scale(drawScale);
 
-            let pixelOffset = Vector2d.zero;
+            const pixelOffsetToDotOffset = () => {
+                return pixelOffset.scale(invDrawScale).map(Math.floor);
+            };
+            this._layers = generateLayers(this._palette, {
+                pixel: pixelOffset,
+                dot: pixelOffsetToDotOffset(),
+            });
+            this.render(true);
+
             this._sceneCanvas.canvas().addEventListener("mousemove", (e: MouseEvent) => {
                 pixelOffset = new Vector2d(
                     clamp(0, rect.width, e.clientX - rect.left),
                     clamp(0, rect.height, e.clientY - rect.top))
                     .map(Math.floor);
-                dotOffset = pixelOffset.scale(invDrawScale);
-                dotOffset = dotOffset.map(Math.floor);
-                console.log(pixelOffset, dotOffset);
             });
 
-            this.render(true);
             setInterval(() => {
-                const shapeOffset: ShapeOffset = {
+                this._layers = generateLayers(this._palette, {
                     pixel: pixelOffset,
-                    dot: dotOffset,
-                };
-                this._layers = generateLayers(this._palette, shapeOffset);
+                    dot: pixelOffsetToDotOffset(),
+                });
                 this.render(false);
             }, 100);
         }
 
         private readonly _palette: ColorPalette = defaultPalette;
-        private _layers: Layers = generateLayers(this._palette, { pixel: Vector2d.zero, dot: Vector2d.zero });
+        private _layers: Layers = {} as Layers;
         private readonly _sceneCanvas: SceneCanvas;
         private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

@@ -74,7 +74,7 @@ function buildPatch(info: BuildPatchInfo): Patch {
 
 function buildQuilt(info: BuildQuiltInfo): Quilt {
     const modPatchExtent = info.abGrid.box().min().toVector().mod(Patch.extent);
-    const abGrid = info.abGrid.applyAdditionalOffset(modPatchExtent);
+    const abGrid = info.abGrid;//.applyAdditionalOffset(modPatchExtent);
     let quiltExtent = info.abGrid.box().extent().divide(Patch.extent).map(Math.ceil).add(Vector2d.unit);
     const quiltGrid = Grid2d.fill<Patch>(quiltExtent, Patch.black);
     for (let y = 0; y < quiltExtent.y; ++y) {
