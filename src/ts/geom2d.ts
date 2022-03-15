@@ -321,13 +321,17 @@ class OffsetGrid2d<T> {
             throw Error();
         }
         const offset = Vector2d.fromTo(this._box.min(), other._box.min());
-        other._box.forEachPosition((otherPosLocal) => {
-            const index = otherPosLocal.add(offset);
-            const newValue = other._grid.getAt(otherPosLocal);
-            const oldValue = this._grid.getAt(index);
-            const combinedValue = combine(oldValue, newValue);
-            this._grid.setAt(index, combinedValue);
-        });
+        const otherExtent = other._box.extent();
+        for (let y = 0; y < otherExtent.y; ++y) {
+            for (let x = 0; x < otherExtent.x; ++x) {
+                const otherPosLocal = new Point2d(x, y);
+                const index = otherPosLocal.add(offset);
+                const newValue = other._grid.getAt(otherPosLocal);
+                const oldValue = this._grid.getAt(index);
+                const combinedValue = combine(oldValue, newValue);
+                this._grid.setAt(index, combinedValue);
+            }
+        }
     }
 
     private readonly _grid: Grid2d<T>;

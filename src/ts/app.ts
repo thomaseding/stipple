@@ -106,10 +106,6 @@ namespace Stipple {
         return layers;
     }
 
-    function composeLayers(dest: Grid2d<Patch>, layers: Layers): void {
-
-    }
-
     const standardPalette = new ColorPalette([
         Color.black,
         Color.red,
@@ -175,9 +171,8 @@ namespace Stipple {
             const ls = this._layers;
             const drawTransform = Transform2d.scaleBy(Vector2d.square(drawScale));
             for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
-                const context = canvas.newRenderContext();
                 if (redrawAll) {
-                    ls.background.renderTo(context, drawTransform);
+                    this._composite.overlayWith(ls.background);
                 }
                 else {
                     throw Error("todo");
@@ -186,7 +181,10 @@ namespace Stipple {
                 if (canvas === this._ditheredCanvas) {
                     shape = bayerizeQuilt(shape);
                 }
-                shape.renderTo(context, drawTransform);
+                this._composite.overlayWith(shape);
+
+                const context = canvas.newRenderContext();
+                this._composite.renderTo(context, drawTransform);
                 canvas.commit(context);
             }
             this._paletteCanvas.render();
@@ -230,7 +228,7 @@ namespace Stipple {
 
         private readonly _palette: ColorPalette = defaultPalette;
         private _layers: Layers = {} as Layers;
-        private readonly _composite = Grid2d.fill(backgroundTileExtent, Patch.black);
+        private readonly _composite = new OffsetQuilt(new Quilt(Grid2d.fill(backgroundTileExtent, Patch.black)), Vector2d.zero);
         private readonly _sceneCanvas: SceneCanvas;
         private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

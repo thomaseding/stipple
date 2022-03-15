@@ -106,10 +106,16 @@ class OffsetQuilt implements SceneObject {
             if (newPatch.colorB) {
                 return newPatch;
             }
+            if (newPatch.pattern().countOf(A) === 0) {
+                return oldPatch;
+            }
             const color = oldPatch.mostProminentColor();
             return new Patch(newPatch.colorA, color, newPatch.pattern());
         }
         if (!newPatch.colorB) {
+            return oldPatch;
+        }
+        if (newPatch.pattern().countOf(B) === 0) {
             return oldPatch;
         }
         const color = oldPatch.mostProminentColor();
