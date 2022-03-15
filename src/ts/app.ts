@@ -38,10 +38,10 @@ namespace Stipple {
         return new Patch(colorA, colorB, pattern);
     }
 
-    const defaultTileExtent = Vector2d.square(24);
+    const backgroundTileExtent = Vector2d.square(24);
 
     function generateRandomQuilt(palette: ColorPalette): Quilt {
-        const patches = Grid2d.build(defaultTileExtent, () => {
+        const patches = Grid2d.build(backgroundTileExtent, () => {
             const blacklist: number[] = [1];
             return randomTile(palette, blacklist);
         });
@@ -49,7 +49,7 @@ namespace Stipple {
     }
 
     function generateSimpleQuilt(colorA: Color, colorB: Color): Quilt {
-        const patches = Grid2d.build(defaultTileExtent, () => {
+        const patches = Grid2d.build(backgroundTileExtent, () => {
             return new Patch(colorA, colorB);
         });
         return new Quilt(patches);
@@ -73,16 +73,12 @@ namespace Stipple {
     }
 
     interface Layers {
-        readonly background: SceneNode<Quilt>;
-        readonly shape: SceneNode<Quilt>;
+        readonly background: OffsetQuilt;
+        readonly shape: OffsetQuilt;
     }
 
-    function generateBackgroundLayer(palette: ColorPalette): SceneNode<Quilt> {
-        const bg = generateBackgroundQuiltCached(palette);
-        const node = new SceneNode<Quilt>();
-        node.objects.push(bg);
-        node.setLocalTransform(Transform2d.scaleBy(Vector2d.square(drawScale)));
-        return node;
+    function generateBackgroundLayer(palette: ColorPalette): OffsetQuilt {
+        return new OffsetQuilt(generateBackgroundQuiltCached(palette), Vector2d.zero);
     }
 
     interface ShapeOffset {
@@ -90,28 +86,16 @@ namespace Stipple {
         dot: Vector2d,
     }
 
-    function generateShapeLayer(palette: ColorPalette, shapeOffset: ShapeOffset): SceneNode<Quilt> {
-        const bg = new OffsetGrid2d(generateBackgroundQuiltCached(palette).patchGrid(), Vector2d.zero);
+    function generateShapeLayer(palette: ColorPalette, shapeOffset: ShapeOffset): OffsetQuilt {
+        const bg = generateBackgroundQuiltCached(palette).grid();
         const shapeMinPatchOffset = shapeOffset.dot.divide(Patch.extent).map(Math.floor);
         const abGrid = new OffsetGrid2d(generateShapeCached(), shapeOffset.dot.mod(Patch.extent));
         const buildInfo: BuildQuiltInfo = {
             abGrid: abGrid,
-            colorA: new IndexedColor(palette, 0),
             colorB: new IndexedColor(palette, 1),
-            alphaPatch: function (patchOffsetWithinQuilt: Vector2d): Patch | undefined {
-                const index = shapeMinPatchOffset.add(patchOffsetWithinQuilt);
-                return bg.getAt(index);
-            }
         };
         const shape = buildQuilt(buildInfo);
-        const node = new SceneNode<Quilt>();
-        node.objects.push(shape);
-        const xform = Transform2d.sequence([
-            Transform2d.translateBy(shapeMinPatchOffset.multiply(Patch.extent)),
-            Transform2d.scaleBy(Vector2d.square(drawScale)),
-        ]);
-        node.setLocalTransform(xform);
-        return node;
+        return new OffsetQuilt(shape, shapeMinPatchOffset);
     }
 
     function generateLayers(palette: ColorPalette, shapeOffset: ShapeOffset): Layers {
@@ -120,6 +104,10 @@ namespace Stipple {
             shape: generateShapeLayer(palette, shapeOffset),
         };
         return layers;
+    }
+
+    function composeLayers(dest: Grid2d<Patch>, layers: Layers): void {
+
     }
 
     const standardPalette = new ColorPalette([
@@ -185,18 +173,20 @@ namespace Stipple {
             redrawAll = true; // TODO
             const startTime = performance.now();
             const ls = this._layers;
+            const drawTransform = Transform2d.scaleBy(Vector2d.square(drawScale));
             for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
                 const context = canvas.newRenderContext();
                 if (redrawAll) {
-                    ls.background.renderTo(context, Transform2d.identity);
+                    ls.background.renderTo(context, drawTransform);
                 }
                 else {
                     throw Error("todo");
                 }
+                let shape = ls.shape;
                 if (canvas === this._ditheredCanvas) {
-                    ls.shape.objects[0] = bayerizeQuilt(ls.shape.objects[0]!);
+                    shape = bayerizeQuilt(shape);
                 }
-                ls.shape.renderTo(context, Transform2d.identity);
+                shape.renderTo(context, drawTransform);
                 canvas.commit(context);
             }
             this._paletteCanvas.render();
@@ -240,6 +230,7 @@ namespace Stipple {
 
         private readonly _palette: ColorPalette = defaultPalette;
         private _layers: Layers = {} as Layers;
+        private readonly _composite = Grid2d.fill(backgroundTileExtent, Patch.black);
         private readonly _sceneCanvas: SceneCanvas;
         private readonly _ditheredCanvas: SceneCanvas;
         private readonly _paletteCanvas: PaletteCanvas;

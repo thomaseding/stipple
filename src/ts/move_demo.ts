@@ -50,9 +50,7 @@ function roundUpToMultipleOf(value: number, k: number): number {
 
 interface BuildQuiltInfo {
     readonly abGrid: OffsetGrid2d<A | B>;
-    readonly colorA: Color;
     readonly colorB: Color;
-    readonly alphaPatch: (patchOffsetWithinQuilt: Vector2d) => Patch | undefined;
 }
 
 interface BuildPatchInfo extends BuildQuiltInfo {
@@ -62,20 +60,12 @@ interface BuildPatchInfo extends BuildQuiltInfo {
 function buildPatch(info: BuildPatchInfo): Patch {
     const patchMinDotOffset = info.patchOffsetWithinQuilt.multiply(Patch.extent);
     const patchGrid = Grid2d.fill<A | B>(Patch.extent, A);
-    const alphaPatch = info.alphaPatch(info.patchOffsetWithinQuilt);
-    let colorA = info.colorA;
-    if (alphaPatch) {
-        colorA = alphaPatch.pattern().countOf(A) < 32 ? alphaPatch.colorB : alphaPatch.colorA;
-    }
     for (const localDotOffset of Patch.localOffsets) {
         const ab = info.abGrid.getAt(patchMinDotOffset.add(localDotOffset)) || A;
         patchGrid.setAt(localDotOffset, ab);
     }
     const pattern = new PatchPattern(patchGrid);
-    if (pattern.countOf(B) === 0 && alphaPatch) {
-        return alphaPatch;
-    }
-    return new Patch(colorA, info.colorB, pattern);
+    return new Patch(null, info.colorB, pattern);
 }
 
 function buildQuilt(info: BuildQuiltInfo): Quilt {
@@ -93,9 +83,7 @@ function buildQuilt(info: BuildQuiltInfo): Quilt {
             const patchOffset = new Vector2d(x, y);
             const patchInfo: BuildPatchInfo = {
                 abGrid: info.abGrid,
-                colorA: info.colorA,
                 colorB: info.colorB,
-                alphaPatch: info.alphaPatch,
                 patchOffsetWithinQuilt: patchOffset,
             };
             const patch = buildPatch(patchInfo);
@@ -117,6 +105,15 @@ function bayerizePatchGrid(grid: ReadonlyGrid2d<Patch>): Grid2d<Patch> {
     });
 }
 
-function bayerizeQuilt(quilt: Quilt): Quilt {
-    return new Quilt(bayerizePatchGrid(quilt.patchGrid()));
+function bayerizeQuilt(quilt: Quilt): Quilt;
+function bayerizeQuilt(quilt: OffsetQuilt): OffsetQuilt;
+function bayerizeQuilt(quilt: Quilt | OffsetQuilt): Quilt | OffsetQuilt {
+    if (quilt instanceof Quilt) {
+        return new Quilt(bayerizePatchGrid(quilt.grid()));
+    }
+    else {
+        const bayer = bayerizeQuilt(quilt.withoutOffset());
+        const offset = quilt.box().min().toVector();
+        return new OffsetQuilt(bayer, offset);
+    }
 }

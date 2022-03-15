@@ -25,6 +25,10 @@ interface SceneObject extends Renderable {
 class SceneNode<T extends SceneObject> implements Renderable {
     public constructor() { }
 
+    public localTransform(): Transform2d {
+        return this._localTransform;
+    }
+
     public setLocalTransform(t: Transform2d): void {
         this._localTransform = t;
     }
