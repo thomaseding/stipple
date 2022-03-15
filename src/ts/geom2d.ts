@@ -185,9 +185,19 @@ class Box2d {
             && min.y <= point.y && point.y < max.y;
     }
 
+    public isDegenerate(): boolean {
+        return this._extent.x < 0 || this._extent.y < 0;
+    }
+
     public containsBox(other: Box2d): boolean {
         return this.containsPoint(other._min)
             && this.containsPoint(other.max().subtract(Vector2d.unit));
+    }
+
+    public intersect(other: Box2d): Box2d {
+        const min = this._min.zipWith(other._min, Math.max);
+        const max = this.max().zipWith(other.max(), Math.min);
+        return new Box2d(min, Vector2d.fromTo(min, max));
     }
 
     private readonly _min: Point2d;
@@ -300,12 +310,19 @@ class OffsetGrid2d<T> {
         return new OffsetGrid2d(this._grid, newOffset);
     }
 
-    public getAt(index: Point2d | Vector2d): T | undefined {
-        if (this._box.containsPoint(index.toPoint())) {
-            const i = index.subtract(this._box.min().toVector());
+    public getAt(pos: Point2d | Vector2d): T | undefined {
+        if (this._box.containsPoint(pos.toPoint())) {
+            const i = pos.subtract(this._box.min().toVector());
             return this._grid.getAt(i);
         }
         return undefined;
+    }
+
+    public setAt(pos: Point2d | Vector2d, value: T): void {
+        if (this._box.containsPoint(pos.toPoint())) {
+            const i = pos.subtract(this._box.min().toVector());
+            this._grid.setAt(i, value);
+        }
     }
 
     public box(): Box2d {
@@ -317,19 +334,22 @@ class OffsetGrid2d<T> {
     }
 
     public overlayWith(other: OffsetGrid2d<T>, combine: (oldValue: T, newValue: T) => T): void {
-        if (!this._box.containsBox(other._box)) {
-            throw Error();
+        const iBox = this._box.intersect(other._box);
+        if (iBox.isDegenerate()) {
+            return;
         }
-        const offset = Vector2d.fromTo(this._box.min(), other._box.min());
-        const otherExtent = other._box.extent();
-        for (let y = 0; y < otherExtent.y; ++y) {
-            for (let x = 0; x < otherExtent.x; ++x) {
-                const otherPosLocal = new Point2d(x, y);
-                const index = otherPosLocal.add(offset);
-                const newValue = other._grid.getAt(otherPosLocal);
-                const oldValue = this._grid.getAt(index);
+        const iExtent = iBox.extent();
+        const offsetTI = Vector2d.fromTo(this._box.min(), iBox.min());
+        for (let y = 0; y < iExtent.y; ++y) {
+            for (let x = 0; x < iExtent.x; ++x) {
+                const globalPos = new Point2d(x, y).add(offsetTI);
+                const newValue = other.getAt(globalPos)!;
+                const oldValue = this.getAt(globalPos)!;
+                if (!newValue || !oldValue) {
+                    throw Error();
+                }
                 const combinedValue = combine(oldValue, newValue);
-                this._grid.setAt(index, combinedValue);
+                this.setAt(globalPos, combinedValue);
             }
         }
     }
