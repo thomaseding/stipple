@@ -9,6 +9,7 @@ class Assets {
         if (image instanceof ImageData) {
             return image;
         }
+        throw Error("todo");
     }
 
     private static readonly _this = new Assets();

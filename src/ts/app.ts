@@ -11,14 +11,6 @@ namespace Stipple {
         return canvas;
     }
 
-    function clamp(min: number, max: number, value: number): number {
-        return Math.min(max, Math.max(min, value));
-    }
-
-    function identity<T>(x: T): T {
-        return x;
-    }
-
     function randomTile(palette: ColorPalette, blacklist: number[] = []): Patch {
         const randIndex = () => {
             let x: number;
