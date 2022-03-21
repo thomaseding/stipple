@@ -575,6 +575,9 @@ var Stipple;
             const startTime = performance.now();
             const ls = this._layers;
             const drawTransform = Transform2d.scaleBy(Vector2d.square(drawScale));
+            this._renderWorker.render("boat").then((output) => {
+                console.log("yazoo", output);
+            });
             for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {
                 if (redrawAll) {
                     this._composite.overlayWith(ls.background);
@@ -1477,7 +1480,7 @@ var RenderThread;
     async function main() {
         globalThis.onmessage = (e) => {
             console.log("RenderThread.onmessage", e.data);
-            post("glider");
+            post(randomChoice(["kite", "glider"]));
         };
     }
     RenderThread.main = main;

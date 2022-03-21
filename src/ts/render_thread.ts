@@ -9,7 +9,7 @@ namespace RenderThread {
     export async function main(): Promise<void> {
         globalThis.onmessage = (e: MessageEvent<RenderInput>) => {
             console.log("RenderThread.onmessage", e.data);
-            post("glider");
+            post(randomChoice(["kite", "glider"]));
         };
     }
 }
