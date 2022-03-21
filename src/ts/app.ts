@@ -135,7 +135,15 @@ namespace Stipple {
     const drawScale = 3;
 
     class App {
-        public constructor(drawCanvasId: string, ditheredCanvasId: string, paletteCanvasId: string) {
+        protected readonly __brand_StippleApp: undefined;
+
+        public static async create(drawCanvasId: string, ditheredCanvasId: string, paletteCanvasId: string): Promise<App> {
+            const renderWorker = await RenderWorker.create();
+            return new App(renderWorker, drawCanvasId, ditheredCanvasId, paletteCanvasId);
+        }
+
+        private constructor(renderWorker: RenderWorker, drawCanvasId: string, ditheredCanvasId: string, paletteCanvasId: string) {
+            this._renderWorker = renderWorker;
             const redraw = () => {
                 this.render(false);
             };
@@ -222,6 +230,7 @@ namespace Stipple {
             }, 100);
         }
 
+        private readonly _renderWorker: RenderWorker;
         private readonly _palette: ColorPalette = defaultPalette;
         private _layers: Layers = {} as Layers;
         private readonly _composite = new OffsetQuilt(new Quilt(Grid2d.fill(backgroundTileExtent, Patch.black)), Vector2d.zero);
@@ -230,13 +239,14 @@ namespace Stipple {
         private readonly _paletteCanvas: PaletteCanvas;
     }
 
-    let _app: App | null = null;
+    let _app: Promise<App> | null = null;
 
-    export function main(): void {
+    export async function main(): Promise<void> {
         if (_app) {
             throw Error();
         }
-        _app = new App("draw-canvas", "dithered-canvas", "palette-canvas");
-        _app.doSomething();
+        _app = App.create("draw-canvas", "dithered-canvas", "palette-canvas");
+        const app = await _app;
+        app.doSomething();
     }
 }

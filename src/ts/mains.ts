@@ -1,15 +1,17 @@
 /// <reference path="promise.ts" />
 
 namespace Mains {
-    export type Entrypoint = "stipple" | "webworker-demo";
+    export type Entrypoint = "stipple" | "render-thread";
 
-    export function main(entry: Entrypoint): void {
+    export async function main(entry: Entrypoint): Promise<void> {
+        console.log("Mains.main", entry);
         switch (entry) {
             case "stipple":
-                newThread("webworker-demo");
-                return Stipple.main();
-            case "webworker-demo":
-                return WebWorkerDemo.main();
+                await Stipple.main();
+                break;
+            case "render-thread":
+                await RenderThread.main();
+                break;
             default:
                 assertNever(entry);
         }
@@ -28,9 +30,10 @@ namespace Mains {
 
     const _isWorkerThread = !("Window" in globalThis);
     if (_isWorkerThread) {
-        globalThis.onmessage = (e: MessageEvent<Entrypoint>) => {
+        globalThis.onmessage = async (e: MessageEvent<Entrypoint>) => {
             globalThis.onmessage = null;
-            main(e.data);
+            await main(e.data);
+            globalThis.postMessage(null);
         };
     }
 }

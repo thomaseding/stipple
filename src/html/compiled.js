@@ -541,10 +541,11 @@ var Stipple;
     const defaultPalette = blueSkyPalette;
     const drawScale = 3;
     class App {
-        constructor(drawCanvasId, ditheredCanvasId, paletteCanvasId) {
+        constructor(renderWorker, drawCanvasId, ditheredCanvasId, paletteCanvasId) {
             this._palette = defaultPalette;
             this._layers = {};
             this._composite = new OffsetQuilt(new Quilt(Grid2d.fill(backgroundTileExtent, Patch.black)), Vector2d.zero);
+            this._renderWorker = renderWorker;
             const redraw = () => {
                 this.render(false);
             };
@@ -564,6 +565,10 @@ var Stipple;
                 redraw: redraw,
                 palette: this._palette,
             });
+        }
+        static async create(drawCanvasId, ditheredCanvasId, paletteCanvasId) {
+            const renderWorker = await RenderWorker.create();
+            return new App(renderWorker, drawCanvasId, ditheredCanvasId, paletteCanvasId);
         }
         render(redrawAll) {
             redrawAll = true; // TODO
@@ -624,12 +629,13 @@ var Stipple;
         }
     }
     let _app = null;
-    function main() {
+    async function main() {
         if (_app) {
             throw Error();
         }
-        _app = new App("draw-canvas", "dithered-canvas", "palette-canvas");
-        _app.doSomething();
+        _app = App.create("draw-canvas", "dithered-canvas", "palette-canvas");
+        const app = await _app;
+        app.doSomething();
     }
     Stipple.main = main;
 })(Stipple || (Stipple = {}));
@@ -752,14 +758,15 @@ Symbol.toStringTag;
 /// <reference path="promise.ts" />
 var Mains;
 (function (Mains) {
-    function main(entry) {
-        console.log(globalThis);
+    async function main(entry) {
+        console.log("Mains.main", entry);
         switch (entry) {
             case "stipple":
-                newThread("webworker-demo");
-                return Stipple.main();
-            case "webworker-demo":
-                return WebWorkerDemo.main();
+                await Stipple.main();
+                break;
+            case "render-thread":
+                await RenderThread.main();
+                break;
             default:
                 assertNever(entry);
         }
@@ -778,9 +785,10 @@ var Mains;
     Mains.newThread = newThread;
     const _isWorkerThread = !("Window" in globalThis);
     if (_isWorkerThread) {
-        globalThis.onmessage = (e) => {
+        globalThis.onmessage = async (e) => {
             globalThis.onmessage = null;
-            main(e.data);
+            await main(e.data);
+            globalThis.postMessage(null);
         };
     }
 })(Mains || (Mains = {}));
@@ -1461,6 +1469,53 @@ function randomChoice(items) {
     const i = randomRangeInt(0, items.length);
     return items[i];
 }
+var RenderThread;
+(function (RenderThread) {
+    function post(output) {
+        globalThis.postMessage(output);
+    }
+    async function main() {
+        globalThis.onmessage = (e) => {
+            console.log("RenderThread.onmessage", e.data);
+            post("glider");
+        };
+    }
+    RenderThread.main = main;
+})(RenderThread || (RenderThread = {}));
+class RenderWorker {
+    constructor(worker) {
+        this._renderOutput = null;
+        this._worker = worker;
+        this._worker.onmessage = (e) => {
+            console.log("RenderWorker.onmessage", e.data);
+            if (this._renderOutput === null) {
+                throw Error();
+            }
+            const p = this._renderOutput;
+            this._renderOutput = null;
+            p.resolve(e.data);
+        };
+    }
+    static async create() {
+        console.log("RenderWorker.create");
+        const worker = await Mains.newThread("render-thread");
+        const renderWorker = new RenderWorker(worker);
+        return renderWorker;
+    }
+    async render(input) {
+        if (this._renderOutput !== null) {
+            throw Error();
+        }
+        this._renderOutput = new OpenPromise();
+        this._post(input);
+        const renderOutput = await this._renderOutput;
+        console.assert(this._renderOutput === null);
+        return renderOutput;
+    }
+    _post(input) {
+        this._worker.postMessage(input);
+    }
+}
 class RenderContext {
     constructor(imageData) {
         this._imageData = imageData;
@@ -1506,10 +1561,3 @@ class Scene {
 }
 class SceneCanvas extends Canvas {
 }
-var WebWorkerDemo;
-(function (WebWorkerDemo) {
-    function main() {
-        console.log("hello from web worker demo");
-    }
-    WebWorkerDemo.main = main;
-})(WebWorkerDemo || (WebWorkerDemo = {}));
