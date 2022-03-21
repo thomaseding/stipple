@@ -173,6 +173,8 @@ namespace Stipple {
             if (!this._renderWorker.isRendering()) {
                 this._renderWorker.render("boat").then((output: RenderOutput) => {
                     console.log("yazoo", output);
+                }, () => {
+                    console.log("caught");
                 });
             }
             for (const canvas of [this._sceneCanvas, this._ditheredCanvas]) {

@@ -38,11 +38,11 @@ abstract class Canvas {
         return this._canvas;
     }
 
-    public newRenderContext(): RenderContext {
-        return new RenderContext(this._imageData);
+    public newRenderContext(): ImageRenderContext {
+        return new ImageRenderContext(this._imageData);
     }
 
-    public commit(context: RenderContext) {
+    public commit(context: ImageRenderContext) {
         if (this._imageData !== (context as any)._imageData) {
             throw Error();
         }

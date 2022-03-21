@@ -5,7 +5,7 @@ class Dot implements SceneObject {
         this.color = color;
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d): void {
+    public renderTo(context: ImageRenderContext, transform: Transform2d): void {
         const rgb = this.color.toRgb();
         const t = transform.translation();
         const s = transform.scale();

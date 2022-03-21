@@ -1,4 +1,4 @@
-class RenderContext {
+class ImageRenderContext {
     public constructor(imageData: ImageData) {
         this._imageData = imageData;
     }
@@ -16,7 +16,7 @@ class RenderContext {
 }
 
 interface Renderable {
-    renderTo(context: RenderContext, transform: Transform2d): void;
+    renderTo(context: ImageRenderContext, transform: Transform2d): void;
 }
 
 interface SceneObject extends Renderable {
@@ -33,7 +33,7 @@ class SceneNode<T extends SceneObject> implements Renderable {
         this._localTransform = t;
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d): void {
+    public renderTo(context: ImageRenderContext, transform: Transform2d): void {
         const t = transform.then(this._localTransform);
         for (const o of this.objects) {
             o.renderTo(context, t);
@@ -49,7 +49,7 @@ class SceneNode<T extends SceneObject> implements Renderable {
 }
 
 class Scene<T extends SceneObject> implements Renderable {
-    public renderTo(context: RenderContext, transform: Transform2d): void {
+    public renderTo(context: ImageRenderContext, transform: Transform2d): void {
         this._rootNode.renderTo(context, transform);
     }
 

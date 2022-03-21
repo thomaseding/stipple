@@ -32,7 +32,7 @@ class Patch implements SceneObject {
         return color;
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d): void {
+    public renderTo(context: ImageRenderContext, transform: Transform2d): void {
         for (const dotOffset of Patch.localOffsets) {
             const color = this.colorAt(dotOffset)!;
             if (color) {
@@ -57,7 +57,7 @@ class Quilt implements SceneObject {
         this._grid = grid;
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d): void {
+    public renderTo(context: ImageRenderContext, transform: Transform2d): void {
         const patchExtent = this._grid.extent();
         for (let x = 0; x < patchExtent.x; ++x) {
             for (let y = 0; y < patchExtent.y; ++y) {
@@ -82,7 +82,7 @@ class OffsetQuilt implements SceneObject {
         this._box = new Box2d(offset.toPoint(), quilt.grid().extent());
     }
 
-    public renderTo(context: RenderContext, transform: Transform2d): void {
+    public renderTo(context: ImageRenderContext, transform: Transform2d): void {
         const xform = Transform2d.translateBy(this._box.min().toVector().multiply(Patch.extent)).then(transform);
         this._quilt.renderTo(context, xform);
     }
