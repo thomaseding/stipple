@@ -19,7 +19,7 @@ namespace Mains {
 
     export async function newThread(entry: Entrypoint): Promise<Worker> {
         const ready = new OpenPromise<Worker>();
-        const worker = new Worker("compiled.js");
+        const worker = new Worker("../js/compiled.js");
         worker.onmessage = () => {
             worker.onmessage = null;
             ready.resolve(worker);

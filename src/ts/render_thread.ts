@@ -48,6 +48,10 @@ class RenderWorker {
         return renderOutput;
     }
 
+    public isRendering(): boolean {
+        return this._renderOutput !== null;
+    }
+
     private _post(input: RenderInput): void {
         this._worker.postMessage(input);
     }
